@@ -1,44 +1,67 @@
-# 🧟‍♂️ PZColab - Project Zomboid Cloud Server
+# 🧟‍♂️ PZColab — Free Project Zomboid Dedicated Server on Google Colab
 
-PZColab es un entorno de despliegue automatizado diseñado para ejecutar un servidor dedicado de **Project Zomboid** directamente en **Google Colab**, compatible con la **Build 41 (legacy)** y la **Build 42 estable**.
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Open In Colab](https://img.shields.io/badge/Open%20In-Colab-orange.svg?logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/Andresdotdev/PZColab/blob/main/PZ_Colab_EN.ipynb)
+[![Python](https://img.shields.io/badge/Python-3.x-3776AB.svg?logo=python&logoColor=white)]()
+[![Project Zomboid](https://img.shields.io/badge/Project%20Zomboid-b41%20%26%20b42-red.svg)]()
+![GitHub stars](https://img.shields.io/github/stars/Andresdotdev/PZColab?style=social)
 
-Este proyecto está pensado como una herramienta open-source para facilitar el testing de comunidad, permitiendo levantar servidores multijugador de forma rápida, gratuita y con persistencia de datos, sin necesidad de configuraciones de red complejas gracias a la integración con Playit.gg.
+**Read this in: [Español 🇪🇸](README.es.md)**
 
-## ✨ Características Principales
+Run your own **free Project Zomboid dedicated server** in the cloud using **Google Colab** — no VPS, no port forwarding, no credit card. Works with **Build 42 (stable)** and **Build 41 (legacy)**, installs everything automatically with **SteamCMD**, persists your world on **Google Drive**, and exposes the server to your friends through a **Playit.gg tunnel**.
 
-* **Despliegue en 1 Clic:** Instalación automatizada de dependencias del sistema, SteamCMD y el servidor base de PZ.
-* **Versiones seleccionables:** **b42 estable** (recomendada), **b41 legacy** y **b42 unstable** — el selector es único y sincronizado entre celdas mediante un archivo de estado en Drive.
-* **Túnel de Red Integrado:** Configuración automática de [Playit.gg](https://playit.gg/) para asignar IPs públicas sin necesidad de abrir puertos (Port Forwarding).
-* **Persistencia en la Nube:** Enlace directo con Google Drive (`/MyDrive/ZomboidSaves`) para asegurar que el mundo, las configuraciones y los perfiles de los jugadores no se pierdan al cerrar la sesión.
-* **Ajuste automático de memoria:** El script ajusta `-Xms/-Xmx` del servidor a 6 GB, compatible con el límite de RAM de Colab (~12.7 GB).
-* **Inyector de Mods Fácil + Colecciones:** Pega la URL del Workshop (o solo el ID) de cada mod — uno por línea — o una colección entera de Steam y el sistema la expande. Descarga cada item vía SteamCMD, **detecta automáticamente el Mod ID real** leyendo el `mod.info`, los clasifica (Librerías, UI, Vehículos, QoL) y los escribe en el `.ini` sin duplicados.
-* **Watchdog de Crashes:** Auto-reinicio del servidor ante fallos (número de reintentos configurable).
-* **Apagado Limpio:** Envía `save` y `quit` al servidor para que el mundo se guarde de forma ordenada.
-* **Consola en Vivo:** Celda de `tail` para ver la consola del servidor en tiempo real.
-* **Backup de Saves:** Genera respaldos `.tar.gz` en Drive con retención configurable.
-* **🛠️ Diagnóstico Avanzado de Logs:** Un script analizador único que escanea los archivos de registro (`DebugLog-server.txt`) para detectar *crashes*, errores de Lua y fallos de Steam Workshop, señalando qué mod específico está causando inestabilidad en el servidor.
-* **Anti-AFK:** Script integrado para la consola del navegador que previene la desconexión por inactividad en Google Colab.
+> This is an open-source tool for the community: spin up multiplayer Project Zomboid servers in minutes, free of charge, and stress-test mods, maps and configurations with zero infrastructure cost.
 
-## 🚀 Uso Rápido
+## 📑 Table of Contents
 
-1. Sube o abre el cuaderno interactivo (`PZ_Colab.ipynb`) en Google Colab.
-2. Ejecuta la **Celda 1** para elegir la versión e instalar el servidor y conectar tu Google Drive.
-3. Ejecuta la **Celda 2** para generar y reclamar tu enlace persistente de Playit.gg (Solo es necesario configurarlo la primera vez).
-4. Ejecuta la **Celda 3** para encender el servidor. ¡Tus amigos pueden conectarse usando la IP y puerto que te asigne Playit!
+- [✨ Features](#-features)
+- [🚀 Quick Start](#-quick-start)
+- [🎮 Supported Game Versions](#-supported-game-versions)
+- [📦 Installing Mods (Easy Mode)](#-installing-mods-easy-mode)
+- [🛠️ Server Operations](#️-server-operations)
+- [🧠 Log Diagnostics](#-log-diagnostics)
+- [❓ FAQ](#-faq)
+- [⚠️ Important Notes](#️-important-notes)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
 
-### Versiones disponibles (Celda 1)
+## ✨ Features
 
-| Opción | Rama SteamCMD | Descripción |
+* **One-click deployment:** automatically installs system dependencies, SteamCMD and the Project Zomboid dedicated server.
+* **Version selector:** **b42 stable** (recommended), **b41 legacy** and **b42 unstable** — one synchronized choice shared across all cells via a state file on Drive.
+* **No port forwarding:** built-in [Playit.gg](https://playit.gg/) tunnel gives your server a public address anyone can join.
+* **Cloud persistence:** saves, configs and player profiles live on your Google Drive (`/MyDrive/ZomboidSaves`) — nothing is lost when the Colab session ends.
+* **Automatic memory tuning:** patches `-Xms/-Xmx` to 6 GB in `start-server.sh`, matching Colab's ~12.7 GB RAM limit.
+* **Easy Workshop mods + collections:** paste a Workshop URL or numeric ID (one per line) — or a whole Steam **collection** — and the notebook downloads each item via SteamCMD, **auto-detects the real Mod ID** from its `mod.info`, classifies them (Libraries / UI / Vehicles / QoL) and writes them to the server `.ini` without duplicates.
+* **Crash watchdog:** the server auto-restarts on failure (configurable retry count).
+* **Clean shutdown:** sends `save` then `quit` so the world is saved safely.
+* **Live console:** a `tail` cell shows the server console in real time.
+* **Saves backup:** one-click `.tar.gz` backups on Drive with configurable retention.
+* **Advanced log diagnostics:** scans log files and groups Lua errors / Steam Workshop failures per mod, naming the actual culprit.
+* **Anti-idle script:** a browser console script that prevents Google Colab from disconnecting your session.
+
+## 🚀 Quick Start
+
+1. Open **`PZ_Colab_EN.ipynb`** in Google Colab (use the badge above or *File → Open notebook → GitHub*).
+2. Run **Cell 1** — pick the game version and install the server (mounts Google Drive automatically).
+3. Run **Cell 2** — claim your persistent Playit.gg tunnel (first time only).
+4. Run **Cell 3** — the server starts in the background. Share the IP/port that Playit assigns!
+
+> 💡 Spanish speakers: use the Spanish version **`PZ_Colab.ipynb`** — [Español 🇪🇸](README.es.md).
+
+## 🎮 Supported Game Versions
+
+| Option | SteamCMD branch | Description |
 |---|---|---|
-| `b42 estable` | Sin beta (por defecto) | Versión estable actual de Project Zomboid. **Recomendada.** |
-| `b41 legacy` | `-beta legacy41` | Versión antigua 41.x, para servidores con mods legacy. |
-| `b42 unstable` | `-beta unstable` | Rama inestable de la Build 42, para testeo de nuevas features. |
+| `b42 stable` | Default (no beta) | Current stable build of Project Zomboid. **Recommended.** |
+| `b41 legacy` | `-beta legacy41` | Legacy 41.x build, for servers with older mods. |
+| `b42 unstable` | `-beta unstable` | Unstable Build 42 branch, for testing new features. |
 
-La versión elegida se guarda en `MyDrive/ZomboidSaves/.pzcolab_state.json` y es leída automáticamente por las demás celdas (no hace falta repetir la selección). Re-ejecutar la **Celda 1** es rápido: si el servidor ya está instalado con la misma versión, omite la descarga; si cambiaste de versión, reinstala automáticamente y detiene el servidor activo.
+The selected version is stored in `MyDrive/ZomboidSaves/.pzcolab_state.json` and reused by every other cell. Re-running **Cell 1** is fast: if the server is already installed with the same version it skips the download; if you switched versions it stops the running server and reinstalls automatically.
 
-### Gestión de Mods (Celda 4)
+## 📦 Installing Mods (Easy Mode)
 
-Pega cada mod en su propia línea — la **URL del Workshop** o **solo el ID numérico**:
+In **Cell 4**, paste one mod per line — the **Workshop URL** or just the **numeric ID**:
 
 ```
 https://steamcommunity.com/sharedfiles/filedetails/?id=2902678
@@ -46,37 +69,48 @@ https://steamcommunity.com/sharedfiles/filedetails/?id=2902678
 https://steamcommunity.com/sharedfiles/filedetails/?id=2750177123
 ```
 
-También acepta **URLs de colecciones de Steam** (se expanden automáticamente). Al ejecutar, la celda descarga cada item con SteamCMD, **detecta el Mod ID real desde su `mod.info`** (no hace falta saberlo), los clasifica (Librerías → UI → Vehículos → QoL) y actualiza el `.ini` sin duplicados, conservando el historial. El reporte final muestra los **nombres reales** de los mods.
+You can also paste **Steam collection URLs** — they expand automatically. The cell downloads each item with SteamCMD, reads the **real Mod ID** from its `mod.info` (so you never need to know it), classifies them (Libraries → UI → Vehicles → QoL load order) and updates the `.ini` without duplicates, keeping your previous mods. The final report shows the mods' **real names**.
 
-Si algún mod falla la detección automática, usa el formato avanzado `URL|ModIDManual` en la misma línea.
+If automatic detection fails for a mod, use the advanced format `URL|ModIDManual` on that line.
 
-> 💡 Si la contraseña de admin se deja vacía en la Celda 3, se recupera del `.ini` existente o se genera una automáticamente (se muestra en consola).
+## 🛠️ Server Operations
 
-### Operación del servidor
+* **Cell 3.1 — Live console:** watch the server output in real time (stop with the ⏹ button).
+* **Cell 3.2 — Clean shutdown:** saves the world and shuts the server down safely.
+* **Cell 5 — Backup:** creates a `.tar.gz` of your saves in `MyDrive/ZomboidSaves_backups` with retention of the last N copies.
+* **Anti-idle (end of notebook):** paste the browser script into the Colab page console (F12) to keep the session alive.
 
-* **Celda 3.1 — Consola en vivo:** muestra la salida del servidor en tiempo real (detener con el botón ⏹).
-* **Celda 3.2 — Apagado limpio:** guarda el mundo y apaga el servidor ordenadamente.
-* **Celda 5 — Backup:** crea un `.tar.gz` de tus saves en `MyDrive/ZomboidSaves_backups` con retención de las N últimas copias.
-* **Anti-AFK (al final del cuaderno):** script para la consola del navegador que evita la desconexión por inactividad mientras el servidor corre.
+## 🧠 Log Diagnostics
 
-## 🧠 Diagnóstico de Errores
+If the server fails to boot or mods misbehave, run **Cell 4.1 — Server Inspector & Advanced Diagnostics**. It analyzes your Drive logs and prints:
+- Exact number of critical Lua errors.
+- The mod/script responsible for the failure.
+- Steam Workshop connection alerts.
 
-Si el servidor presenta problemas al arrancar, ejecuta la herramienta **4.1 Inspector y Diagnóstico Avanzado**. Este bloque analizará el historial de Google Drive y te entregará un reporte visual en consola indicando:
-- Número exacto de errores críticos de Lua.
-- Nombre del Mod/Script culpable del fallo.
-- Alertas de conexión con Steam.
+## ❓ FAQ
 
-## ⚠️ Notas Importantes
+**Is it really free?** Yes — Google Colab's free tier runs the server at no cost (session-limited to ~12 hours). A VPS or dedicated host is not required.
 
-* **Playit.gg:** la versión del agente está fijada en `v0.15.26` a propósito (compatibilidad con consola de Colab). No actualizar.
-* **Límites de Colab:** las sesiones gratuitas duran hasta 12 horas y tienen un timeout por inactividad (~90 min). Usa el script Anti-AFK del cuaderno y reinicia el servidor al reconectar el runtime.
-* **Cambio de puerto:** si cambias el puerto UDP en la Celda 3, recuerda actualizar el túnel correspondiente en tu panel de [Playit.gg](https://playit.gg/account).
+**Does it work with Steam Workshop mods?** Yes. Cell 4 downloads mods via SteamCMD and writes them to the server configuration automatically, including Steam collections.
 
-## 🤝 Contribuciones y Pruebas de Comunidad
+**Do I need to open ports on my router?** No. Playit.gg creates a public tunnel without port forwarding.
 
-Las contribuciones (Pull Requests) son bienvenidas. Este proyecto busca ser una base sólida para que la comunidad hispanohablante de desarrolladores y jugadores de Project Zomboid pueda realizar pruebas de estrés de mods, mapas y configuraciones en entornos multijugador sin coste de infraestructura local.
+**How much RAM does the server use?** The notebook sets the server to 6 GB, safely below Colab's ~12.7 GB limit.
 
-Si encuentras algún *bug* o tienes ideas para optimizar el consumo de RAM/CPU en el entorno de Colab, no dudes en abrir un *Issue*.
+**Will my world be lost when Colab disconnects?** No. The world and configs are stored on your Google Drive and reloaded on the next session.
 
-## 📄 Licencia
-Este proyecto está bajo la Licencia MIT. Eres libre de usarlo, modificarlo y distribuirlo para tus propias pruebas.
+**Can I play with friends on b41 and b42?** Yes — pick the version in Cell 1; the notebook installs the matching dedicated server branch (legacy 41 or stable 42).
+
+## ⚠️ Important Notes
+
+* **Playit.gg is pinned to `v0.15.26`** on purpose (Colab console compatibility). Do not upgrade.
+* **Colab limits:** free sessions last up to 12 hours with an inactivity timeout (~90 min). Use the notebook's anti-idle script and restart the server after reconnecting.
+* **Port changes:** if you change the UDP port in Cell 3, update the matching tunnel in your [Playit.gg](https://playit.gg/account) dashboard.
+
+## 🤝 Contributing
+
+Pull requests are welcome! This project aims to be a solid base for the community to stress-test mods, maps and configurations in multiplayer environments without local infrastructure costs. Found a bug or have ideas to reduce RAM/CPU usage on Colab? Open an [Issue](https://github.com/Andresdotdev/PZColab/issues).
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE). Free to use, modify and distribute for your own testing.
