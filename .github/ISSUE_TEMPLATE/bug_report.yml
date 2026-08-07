@@ -1,0 +1,70 @@
+name: 🐛 Bug report
+description: Report a problem with PZColab (notebook, server, mods or documentation)
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this! Fill in the details below — the more context, the faster we can fix it.
+  - type: dropdown
+    id: version
+    attributes:
+      label: Game version
+      description: Which server version were you using?
+      options:
+        - b42 stable
+        - b41 legacy
+        - b42 unstable
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: notebook
+    attributes:
+      label: Notebook
+      options:
+        - PZ_Colab.ipynb (Spanish)
+        - PZ_Colab_EN.ipynb (English)
+    validations:
+      required: true
+  - type: input
+    id: cell
+    attributes:
+      label: Cell / step
+      description: Which cell or step fails? (e.g. "Cell 1", "Cell 4 with a collection URL", "Cell 3.2 shutdown")
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you do, step by step?
+      placeholder: |
+        1. Opened the notebook in Colab
+        2. Ran Cell 1 with b42 stable
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: Paste the relevant console output from the cell (no need for the whole log).
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: false
+  - type: input
+    id: colab
+    attributes:
+      label: Colab runtime
+      description: e.g. "Free tier, CPU runtime", "Colab Pro CPU", "GPU runtime" — and whether it was a fresh runtime.
+    validations:
+      required: false

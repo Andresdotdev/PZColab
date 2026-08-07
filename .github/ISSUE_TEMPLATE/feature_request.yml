@@ -1,0 +1,43 @@
+name: ✨ Feature request
+description: Suggest an idea for PZColab
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! Tell us what you'd like PZColab to do.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is the problem / use case?
+      description: A clear description of what you're trying to achieve.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What should the feature look like? (cell, config option, command, UI change...)
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds or alternative approaches you tried.
+    validations:
+      required: false
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      description: Where should this live?
+      options:
+        - Notebook cell / UX
+        - Server behavior (watchdog, config, mods)
+        - Documentation / README
+        - Tooling (tools/)
+        - GitHub Pages / repo metadata
+    validations:
+      required: false
