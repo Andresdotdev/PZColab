@@ -31,13 +31,13 @@ Run your own **free Project Zomboid dedicated server** in the cloud using **Goog
 * **Version selector:** **b42 stable** (recommended), **b41 legacy** and **b42 unstable** — one synchronized choice shared across all cells via a state file on Drive.
 * **No port forwarding:** built-in [Playit.gg](https://playit.gg/) tunnel gives your server a public address anyone can join.
 * **Cloud persistence:** saves, configs and player profiles live on your Google Drive (`/MyDrive/ZomboidSaves`) — nothing is lost when the Colab session ends.
-* **Automatic memory tuning:** patches `-Xms/-Xmx` to 6 GB in `start-server.sh`, matching Colab's ~12.7 GB RAM limit.
+* **Configurable memory:** choose 4 / 6 / 8 GB of server RAM in Cell 3 — the notebook re-patches `-Xms/-Xmx` on every start and **auto-caps** the value to a safe limit based on the runtime's real RAM (never more than 8 GB on Colab).
 * **Easy Workshop mods + collections:** paste a Workshop URL or numeric ID (one per line) — or a whole Steam **collection** — and the notebook downloads each item via SteamCMD, **auto-detects the real Mod ID** from its `mod.info`, classifies them (Libraries / UI / Vehicles / QoL) and writes them to the server `.ini` without duplicates.
 * **Crash watchdog:** the server auto-restarts on failure (configurable retry count).
 * **Clean shutdown:** sends `save` then `quit` so the world is saved safely.
 * **Live console:** a `tail` cell shows the server console in real time.
 * **Saves backup:** one-click `.tar.gz` backups on Drive with configurable retention.
-* **Advanced log diagnostics:** scans log files and groups Lua errors / Steam Workshop failures per mod, naming the actual culprit.
+* **Advanced log diagnostics:** scans log files and groups errors per mod — Lua crashes, Steam Workshop failures, **out-of-memory problems, server/port errors and save failures** — naming the actual culprit and suggesting fixes.
 * **Anti-idle script:** a browser console script that prevents Google Colab from disconnecting your session.
 
 ## 🚀 Quick Start
@@ -88,6 +88,7 @@ If the server fails to boot or mods misbehave, run **Cell 4.1 — Server Inspect
 - Exact number of critical Lua errors.
 - The mod/script responsible for the failure.
 - Steam Workshop connection alerts.
+- **Out-of-memory problems** (with a hint to raise memory in Cell 3 or reduce players/mods), **server/port errors** and **save failures**.
 
 ## ❓ FAQ
 
@@ -97,7 +98,7 @@ If the server fails to boot or mods misbehave, run **Cell 4.1 — Server Inspect
 
 **Do I need to open ports on my router?** No. Playit.gg creates a public tunnel without port forwarding.
 
-**How much RAM does the server use?** The notebook sets the server to 6 GB, safely below Colab's ~12.7 GB limit.
+**How much RAM does the server use?** Cell 3 lets you pick 4, 6 or 8 GB. The notebook automatically caps your choice to a safe value based on the runtime's real RAM (8 GB max on Colab's ~12.7 GB machines — the rest is reserved for the system, the tunnel and Colab itself).
 
 **Will my world be lost when Colab disconnects?** No. The world and configs are stored on your Google Drive and reloaded on the next session.
 

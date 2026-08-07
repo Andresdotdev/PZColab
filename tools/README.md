@@ -28,6 +28,13 @@ python tools/test_cell4.py                    # Spanish notebook
 python tools/test_cell4.py PZ_Colab_EN.ipynb  # English notebook
 ```
 
+Cell 4.1 diagnostics + memory cap tests:
+
+```bash
+python tools/test_diagnostico.py                    # Spanish notebook
+python tools/test_diagnostico.py PZ_Colab_EN.ipynb  # English notebook
+```
+
 ## Check for untranslated strings
 
 Detects leftover Spanish UI strings in the English notebook (some hits are false positives — review the output):

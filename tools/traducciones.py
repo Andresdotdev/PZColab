@@ -168,6 +168,19 @@ TRADUCCIONES = [
     ("Limpiar_Lista_Anterior", "clear_previous_list"),
     ("Descargar_Mods", "download_mods"),
     ("Backup_Max_Guardar", "backup_max_keep"),
+    ("memoria_gb", "memory_gb"),
+    (
+        "# @markdown _💡 Cuanta más memoria, más mods y jugadores caben. Máx. seguro: 8 GB en Colab._",
+        "# @markdown _💡 More memory fits more mods and players. Safe max: 8 GB on Colab._",
+    ),
+    (
+        'f"⚠️ Elegiste {memoria_elegida} GB pero este runtime permite hasta {tope_seguro} GB. Se aplica {memoria_final} GB."',
+        'f"⚠️ You chose {memoria_elegida} GB but this runtime allows up to {tope_seguro} GB. Applying {memoria_final} GB."',
+    ),
+    (
+        'f"💾 Memoria del servidor: {memoria_final} GB (tope seguro de este runtime: {tope_seguro} GB)."',
+        'f"💾 Server memory: {memoria_final} GB (safe cap for this runtime: {tope_seguro} GB)."',
+    ),
     # --- Celda 2 ---
     ("# @title 2. Configurar Playit.gg Persistente", "# @title 2. Configure Persistent Playit.gg"),
     ('"❌ Google Drive NO está montado. Ejecuta primero la Celda 1."', '"❌ Google Drive is NOT mounted. Run Cell 1 first."'),
@@ -310,6 +323,47 @@ TRADUCCIONES = [
     (
         '"   Si el mod no carga, revisa su página para confirmar compatibilidad."',
         '"   If the mod fails to load, check its page to confirm compatibility."',
+    ),
+    # --- Celda 4.1: memoria, servidor y guardado ---
+    (
+        'f"[Línea {num_linea}] 🧠 ➡️ {line.strip()[:110]}"',
+        'f"[Line {num_linea}] 🧠 ➡️ {line.strip()[:110]}"',
+    ),
+    (
+        'f"[Línea {num_linea}] ⚠️ ➡️ {line.strip()[:110]}"',
+        'f"[Line {num_linea}] ⚠️ ➡️ {line.strip()[:110]}"',
+    ),
+    (
+        'f"[Línea {num_linea}] 💾 ➡️ {line.strip()[:110]}"',
+        'f"[Line {num_linea}] 💾 ➡️ {line.strip()[:110]}"',
+    ),
+    (
+        'f"🧠 PROBLEMAS DE MEMORIA: {len(problemas_memoria)}"',
+        'f"🧠 MEMORY PROBLEMS: {len(problemas_memoria)}"',
+    ),
+    (
+        '"   💡 Sube la memoria en la Celda 3 (máx 8 GB) o reduce MaxPlayers/mods pesados."',
+        '"   💡 Increase the memory in Cell 3 (max 8 GB) or reduce MaxPlayers/heavy mods."',
+    ),
+    (
+        'f"⚠️ ERRORES DEL SERVIDOR: {len(errores_servidor)}"',
+        'f"⚠️ SERVER ERRORS: {len(errores_servidor)}"',
+    ),
+    (
+        'f"💾 FALLOS DE GUARDADO: {len(fallos_guardado)}"',
+        'f"💾 SAVE FAILURES: {len(fallos_guardado)}"',
+    ),
+    (
+        '"   El servidor se quedó sin memoria. Aumenta la memoria en la Celda 3 (máx 8 GB) o reduce jugadores/mods."',
+        '"   The server ran out of memory. Increase the memory in Cell 3 (max 8 GB) or reduce players/mods."',
+    ),
+    (
+        '"   Hay errores de red/puerto o del propio servidor. Revisa las líneas señaladas arriba."',
+        '"   There are network/port or server errors. Review the lines flagged above."',
+    ),
+    (
+        '"   Hubo fallos al guardar el mundo. Verifica el espacio en Drive y usa la Celda 3.2 para un apagado limpio."',
+        '"   There were errors saving the world. Check Drive space and use Cell 3.2 for a clean shutdown."',
     ),
     (
         '"ℹ️ No hay mods nuevos para procesar. Para ver los actuales usa la Celda 4.1."',

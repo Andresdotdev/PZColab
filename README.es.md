@@ -16,7 +16,7 @@ Este proyecto está pensado como una herramienta open-source para facilitar el t
 * **Versiones seleccionables:** **b42 estable** (recomendada), **b41 legacy** y **b42 unstable** — el selector es único y sincronizado entre celdas mediante un archivo de estado en Drive.
 * **Túnel de Red Integrado:** Configuración automática de [Playit.gg](https://playit.gg/) para asignar IPs públicas sin necesidad de abrir puertos (Port Forwarding).
 * **Persistencia en la Nube:** Enlace directo con Google Drive (`/MyDrive/ZomboidSaves`) para asegurar que el mundo, las configuraciones y los perfiles de los jugadores no se pierdan al cerrar la sesión.
-* **Ajuste automático de memoria:** El script ajusta `-Xms/-Xmx` del servidor a 6 GB, compatible con el límite de RAM de Colab (~12.7 GB).
+* **Memoria configurable:** elige 4 / 6 / 8 GB de RAM del servidor en la Celda 3 — el cuaderno re-aplica el parche `-Xms/-Xmx` en cada arranque y **limita automáticamente** el valor según la RAM real del runtime (nunca más de 8 GB en Colab).
 * **Inyector de Mods Fácil + Colecciones:** Pega la URL del Workshop (o solo el ID) de cada mod — uno por línea — o una colección entera de Steam y el sistema la expande. Descarga cada item vía SteamCMD, **detecta automáticamente el Mod ID real** leyendo el `mod.info`, los clasifica (Librerías, UI, Vehículos, QoL) y los escribe en el `.ini` sin duplicados.
 * **Watchdog de Crashes:** Auto-reinicio del servidor ante fallos (número de reintentos configurable).
 * **Apagado Limpio:** Envía `save` y `quit` al servidor para que el mundo se guarde de forma ordenada.
@@ -73,6 +73,7 @@ Si el servidor presenta problemas al arrancar, ejecuta la herramienta **4.1 Insp
 - Número exacto de errores críticos de Lua.
 - Nombre del Mod/Script culpable del fallo.
 - Alertas de conexión con Steam.
+- **Problemas de memoria** (con sugerencia de subir la memoria en la Celda 3 o reducir jugadores/mods), **errores de servidor/puerto** y **fallos al guardar**.
 
 ## ⚠️ Notas Importantes
 

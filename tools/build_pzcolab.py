@@ -243,6 +243,8 @@ server_password = '' # @param {type: "string"}
 port = 16261 # @param {type: "integer"}
 max_players = 16 # @param {type: "integer"}
 pausa_cuando_vacio = True # @param {type: "boolean"}
+# @markdown _💡 Cuanta más memoria, más mods y jugadores caben. Máx. seguro: 8 GB en Colab._
+memoria_gb = "6 GB" # @param ["4 GB", "6 GB", "8 GB"]
 # @markdown _💡 Si cambias el puerto, actualiza el túnel en playit.gg._
 # @markdown
 # @markdown ### 🛡️ Watchdog (auto-reinicio ante crashes)
@@ -362,12 +364,38 @@ os.system("pkill -f playit 2>/dev/null")
 os.system("nohup playit > /tmp/playit.log 2>&1 &")
 print("✅ Túnel Playit encendido en el fondo.")
 
-# --- 3. LANZAR SERVIDOR EN SEGUNDO PLANO CON WATCHDOG ---
-if not os.path.exists("/content/pzserver/start-server.sh"):
+# --- 3. APLICAR MEMORIA CONFIGURADA (parche Xms/Xmx en start-server.sh) ---
+START_SH = "/content/pzserver/start-server.sh"
+if not os.path.exists(START_SH):
     abortar("❌ No se encontró start-server.sh. Ejecuta primero la Celda 1 (instalación).")
+
+memoria_elegida = int(str(memoria_gb).split()[0])
+tope_seguro = 8
+try:
+    with open("/proc/meminfo") as f:
+        for linea in f:
+            if linea.startswith("MemTotal:"):
+                ram_total_gb = int(linea.split()[1]) // 1024 // 1024
+                tope_seguro = min(8, max(4, ram_total_gb - 4))
+                break
+except Exception:
+    pass
+memoria_final = min(memoria_elegida, tope_seguro)
+if memoria_final < memoria_elegida:
+    print(f"⚠️ Elegiste {memoria_elegida} GB pero este runtime permite hasta {tope_seguro} GB. Se aplica {memoria_final} GB.")
+
+with open(START_SH) as f:
+    contenido = f.read()
+nuevo = re.sub(r'-Xms\\S+', f'-Xms{memoria_final}g', contenido)
+nuevo = re.sub(r'-Xmx\\S+', f'-Xmx{memoria_final}g', nuevo)
+if nuevo != contenido:
+    with open(START_SH, "w") as f:
+        f.write(nuevo)
+    print(f"💾 Memoria del servidor: {memoria_final} GB (tope seguro de este runtime: {tope_seguro} GB).")
 
 os.system("chmod +x /content/pzserver/start-server.sh 2>/dev/null")
 
+# --- 4. LANZAR SERVIDOR EN SEGUNDO PLANO CON WATCHDOG ---
 logf = open(LOG_PATH, "a", buffering=1)
 logf.write(f"\\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] 🚀 INICIO DE SERVIDOR ({Version})\\n")
 logf.flush()
@@ -886,6 +914,9 @@ else:
     fallos_criticos = []
     alertas_esteticas = []
     errores_steam = []
+    problemas_memoria = []
+    errores_servidor = []
+    fallos_guardado = []
 
     # Diccionario para contar qué mods están dando más guerra
     mods_culpables = {}
@@ -911,12 +942,44 @@ else:
         elif "workshop" in line_lower and ("fail" in line_lower or "error" in line_lower or "rejected" in line_lower):
             errores_steam.append(f"[Línea {num_linea}] 🌐 Fallo Steam ➡️ {line.strip()}")
 
-        # 3. FILTRAR ALERTAS MENORES (Evita alarmar por sonidos o vallas rotas)
+        # 3. DETECTAR PROBLEMAS DE MEMORIA
+        elif ("outofmemory" in line_lower or "out of memory" in line_lower or "gc overhead" in line_lower
+              or "heap space" in line_lower or "could not reserve enough space" in line_lower
+              or "insufficient memory" in line_lower):
+            problemas_memoria.append(f"[Línea {num_linea}] 🧠 ➡️ {line.strip()[:110]}")
+
+        # 4. DETECTAR ERRORES GENERALES DEL SERVIDOR (puertos, assert, steam)
+        elif ("failed to bind" in line_lower or "address already in use" in line_lower
+              or "assertion failed" in line_lower or "illegal worker thread" in line_lower
+              or ("steam" in line_lower and ("timeout" in line_lower or "not responding" in line_lower))):
+            errores_servidor.append(f"[Línea {num_linea}] ⚠️ ➡️ {line.strip()[:110]}")
+
+        # 5. DETECTAR FALLOS AL GUARDAR
+        elif "failed to save" in line_lower or ("save" in line_lower and ("corrupt" in line_lower or "failed" in line_lower)):
+            fallos_guardado.append(f"[Línea {num_linea}] 💾 ➡️ {line.strip()[:110]}")
+
+        # 6. FILTRAR ALERTAS MENORES (Evita alarmar por sonidos o vallas rotas)
         elif "missing" in line_lower and ("thumpsound" in line_lower or "tile" in line_lower or "media/sound" in line_lower):
             alertas_esteticas.append(f"[Línea {num_linea}] 📝 Detalle ➡️ {line.strip()[:90]}...")
 
     # --- DESPLIEGUE DEL REPORTE RESUMIDO ---
-    if fallos_criticos or errores_steam or alertas_esteticas:
+    if fallos_criticos or errores_steam or alertas_esteticas or problemas_memoria or errores_servidor or fallos_guardado:
+
+        if problemas_memoria:
+            print(f"🧠 PROBLEMAS DE MEMORIA: {len(problemas_memoria)}")
+            for err in problemas_memoria[:3]: print(f"   {err}")
+            print("   💡 Sube la memoria en la Celda 3 (máx 8 GB) o reduce MaxPlayers/mods pesados.")
+            print("-" * 60)
+
+        if errores_servidor:
+            print(f"⚠️ ERRORES DEL SERVIDOR: {len(errores_servidor)}")
+            for err in errores_servidor[:3]: print(f"   {err}")
+            print("-" * 60)
+
+        if fallos_guardado:
+            print(f"💾 FALLOS DE GUARDADO: {len(fallos_guardado)}")
+            for err in fallos_guardado[:3]: print(f"   {err}")
+            print("-" * 60)
 
         if fallos_criticos:
             print(f"🔴 Errores de Lua/Crashes Detectados: {len(fallos_criticos)}")
@@ -943,6 +1006,12 @@ else:
         if fallos_criticos:
             print("   El servidor inició, pero hay mods con scripts obsoletos. Si notas lag visual o items invisibles,")
             print("   revisa los mods indicados en el top de inestabilidad.")
+        elif problemas_memoria:
+            print("   El servidor se quedó sin memoria. Aumenta la memoria en la Celda 3 (máx 8 GB) o reduce jugadores/mods.")
+        elif errores_servidor:
+            print("   Hay errores de red/puerto o del propio servidor. Revisa las líneas señaladas arriba.")
+        elif fallos_guardado:
+            print("   Hubo fallos al guardar el mundo. Verifica el espacio en Drive y usa la Celda 3.2 para un apagado limpio.")
         else:
             print("   ¡Estable! El servidor no registra problemas de programación críticos en los mods.")
     else:
