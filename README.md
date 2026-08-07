@@ -11,7 +11,7 @@ Este proyecto está pensado como una herramienta open-source para facilitar el t
 * **Túnel de Red Integrado:** Configuración automática de [Playit.gg](https://playit.gg/) para asignar IPs públicas sin necesidad de abrir puertos (Port Forwarding).
 * **Persistencia en la Nube:** Enlace directo con Google Drive (`/MyDrive/ZomboidSaves`) para asegurar que el mundo, las configuraciones y los perfiles de los jugadores no se pierdan al cerrar la sesión.
 * **Ajuste automático de memoria:** El script ajusta `-Xms/-Xmx` del servidor a 6 GB, compatible con el límite de RAM de Colab (~12.7 GB).
-* **Inyector de Mods Compacto + Descarga Workshop:** Interfaz integrada para añadir mods de Steam Workshop (hasta 10 slots a la vez) modificando el `.ini` de forma segura y **descargándolos automáticamente vía SteamCMD** para que el servidor los cargue sin esperas.
+* **Inyector de Mods Fácil + Colecciones:** Pega la URL del Workshop (o solo el ID) de cada mod — uno por línea — o una colección entera de Steam y el sistema la expande. Descarga cada item vía SteamCMD, **detecta automáticamente el Mod ID real** leyendo el `mod.info`, los clasifica (Librerías, UI, Vehículos, QoL) y los escribe en el `.ini` sin duplicados.
 * **Watchdog de Crashes:** Auto-reinicio del servidor ante fallos (número de reintentos configurable).
 * **Apagado Limpio:** Envía `save` y `quit` al servidor para que el mundo se guarde de forma ordenada.
 * **Consola en Vivo:** Celda de `tail` para ver la consola del servidor en tiempo real.
@@ -38,7 +38,17 @@ La versión elegida se guarda en `MyDrive/ZomboidSaves/.pzcolab_state.json` y es
 
 ### Gestión de Mods (Celda 4)
 
-Para instalar mods, introduce el `Workshop ID` y el `Mod ID` en los slots disponibles. El inyector se encargará de clasificarlos (Librerías, UI, Vehículos, QoL) y escribirlos correctamente en el archivo de configuración sin duplicados. Con **Descargar Mods** activado, cada item del Workshop se descarga automáticamente con SteamCMD antes de reiniciar el servidor.
+Pega cada mod en su propia línea — la **URL del Workshop** o **solo el ID numérico**:
+
+```
+https://steamcommunity.com/sharedfiles/filedetails/?id=2902678
+2861456062
+https://steamcommunity.com/sharedfiles/filedetails/?id=2750177123
+```
+
+También acepta **URLs de colecciones de Steam** (se expanden automáticamente). Al ejecutar, la celda descarga cada item con SteamCMD, **detecta el Mod ID real desde su `mod.info`** (no hace falta saberlo), los clasifica (Librerías → UI → Vehículos → QoL) y actualiza el `.ini` sin duplicados, conservando el historial. El reporte final muestra los **nombres reales** de los mods.
+
+Si algún mod falla la detección automática, usa el formato avanzado `URL|ModIDManual` en la misma línea.
 
 > 💡 Si la contraseña de admin se deja vacía en la Celda 3, se recupera del `.ini` existente o se genera una automáticamente (se muestra en consola).
 
