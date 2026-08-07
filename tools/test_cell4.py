@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test funcional de la nueva Celda 4 (mods fáciles + colecciones)."""
+import contextlib
+import io
 import json
 import os
 import re
@@ -52,12 +54,24 @@ os.makedirs(item3)
 with open(os.path.join(item3, "mod.info"), "w") as f:
     f.write("id=colection\nname=Fake Collection\n")
 
+# item 556677: mod "b42-only" (para test de compatibilidad)
+item_f = os.path.join(WS, "556677", "mods", "coolmod")
+os.makedirs(item_f)
+with open(os.path.join(item_f, "mod.info"), "w", encoding="utf-8") as f:
+    f.write("id=coolmod\nname=Cool Mod\n")
+
+# item 556678: mod con dependencia requerida que NO está en la lista
+item_g = os.path.join(WS, "556678", "mods", "gmod")
+os.makedirs(item_g)
+with open(os.path.join(item_g, "mod.info"), "w", encoding="utf-8") as f:
+    f.write("id=gmod\nname=G Mod\nrequire=otromod\n")
+
 INI = os.path.join(saves, "Server", "PzColab.ini")
 os.makedirs(os.path.dirname(INI), exist_ok=True)
 with open(INI, "w") as f:
     f.write("Port=16261\nWorkshopItems=1111\nMods=\\oldmod\nPauseOnEmpty=true\n")
 
-# --- Fake requests para las colecciones ---
+# --- Fake requests para las colecciones + compatibilidad ---
 def fake_requests_get(url, headers=None, timeout=None):
     r = types.SimpleNamespace()
     if "id=9999" in url and "insideModal" in url:
@@ -66,6 +80,9 @@ def fake_requests_get(url, headers=None, timeout=None):
     elif "id=9999" in url:
         r.status_code = 200
         r.text = '<div class="collectionChildren"></div>'
+    elif "id=556677" in url:
+        r.status_code = 200
+        r.text = '<div class="workshopItemTitle">Cool Mod</div><div class="workshopItemDescription">This mod requires Build 42!</div>'
     else:
         r.status_code = 200
         r.text = "<html>normal mod page</html>"
@@ -106,7 +123,10 @@ def correr(input_, limpiar=False, descargar=True):
     ns["_INPUT"] = input_
     ns["_LIMP"] = limpiar
     ns["_DESC"] = descargar
-    exec(compile(code, "cell-mods", "exec"), ns)
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        exec(compile(code, "cell-mods", "exec"), ns)
+    return buf.getvalue()
 
 # ============ ESCENARIO A: mod individual + fallback manual + historial (b42) ============
 correr("https://steamcommunity.com/sharedfiles/filedetails/?id=2902678\n2861456062|manualmod\nlinea-basura")
@@ -158,5 +178,42 @@ assert f("2861456062") == ("2861456062", None)
 assert f("https://steamcommunity.com/sharedfiles/filedetails/?id=2750177123|mycustommod") == ("2750177123", "mycustommod")
 assert f("") is None and f("cosas raras") is None
 print("E1 OK: extraer_id cubre URL, número, fallback manual y basura")
+
+# ============ ESCENARIO F: compatibilidad de versión (b41 vs página b42) ============
+# el estado quedó en b41 legacy desde el escenario C
+aviso_compat = "POSIBLES INCOMPATIBILIDADES" if ES else "POSSIBLE VERSION INCOMPATIBILITIES"
+out = correr("556677")
+assert aviso_compat in out, f"sin aviso de compatibilidad:\n{out}"
+assert "Build 42" in out, f"el motivo no menciona Build 42:\n{out}"
+assert "coolmod" in open(INI).read()
+print("F1 OK: aviso de compatibilidad heurístico (página b42 + servidor b41)")
+
+# unit test de analizar_compatibilidad
+ns.clear()
+ns["re"] = re
+ns["is_b42"] = False
+exec(compile("def analizar_compatibilidad(pagina):\n"
+             "    if not pagina:\n        return None\n"
+             "    txt = pagina.lower()\n"
+             "    marca41 = bool(re.search(r'\\bb41\\b|build\\s*41', txt))\n"
+             "    marca42 = bool(re.search(r'\\bb42\\b|build\\s*42|42\\.\\d', txt))\n"
+             "    if marca41 and marca42:\n        return None\n"
+             "    if marca42 and not is_b42:\n        return 'conflicto b42'\n"
+             "    if marca41 and is_b42:\n        return 'conflicto b41'\n"
+             "    return None\n", "unit", "exec"), ns)
+ac = ns["analizar_compatibilidad"]
+assert ac("<html>Build 42 only</html>") == "conflicto b42"
+assert ac("<html>works on b41 and b42</html>") is None
+assert ac("<html>no markers</html>") is None
+ns["is_b42"] = True
+assert ac("<html>Build 41 legacy</html>") == "conflicto b41"
+print("F2 OK: analizar_compatibilidad unitario (b41, b42, ambos, ninguno)")
+
+# ============ ESCENARIO G: dependencias requeridas (require= en mod.info) ============
+aviso_deps = "DEPENDENCIAS FALTANTES" if ES else "MISSING DEPENDENCIES"
+out = correr("556678")
+assert aviso_deps in out, f"sin aviso de dependencias:\n{out}"
+assert "otromod" in out, f"no menciona la dependencia faltante:\n{out}"
+print("G1 OK: dependencia requerida faltante detectada en el reporte")
 
 print("\n✅ TODOS LOS ESCENARIOS PASARON")

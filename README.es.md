@@ -56,6 +56,8 @@ También acepta **URLs de colecciones de Steam** (se expanden automáticamente).
 
 Si algún mod falla la detección automática, usa el formato avanzado `URL|ModIDManual` en la misma línea.
 
+La celda también avisa de **posibles incompatibilidades de build** (b41 vs b42) escaneando la página del Workshop de cada mod, y de **dependencias requeridas faltantes** (`require=` en `mod.info`) antes de reiniciar el servidor — el reporte muestra el nombre real, el tipo y las dependencias de cada mod.
+
 > 💡 Si la contraseña de admin se deja vacía en la Celda 3, se recupera del `.ini` existente o se genera una automáticamente (se muestra en consola).
 
 ### Operación del servidor

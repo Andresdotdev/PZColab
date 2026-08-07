@@ -269,12 +269,47 @@ TRADUCCIONES = [
         "# @markdown _💡 Downloads each item via SteamCMD and detects the real Mod ID from its `mod.info`._",
     ),
     (
-        'f"⚙️ Versión activa: {Version.upper()} | Servidor: {server_name}\\n"',
-        'f"⚙️ Active version: {Version.upper()} | Server: {server_name}\\n"',
+        "**▶️ Para confirmar: ejecuta esta celda con el botón ▶ (o Ctrl+Enter). Los campos del formulario se procesan al ejecutar la celda — no hay un botón interno.**",
+        "**▶️ To confirm: run this cell with the ▶ button (or Ctrl+Enter). Form fields are processed when the cell runs — there is no internal button.**",
+    ),
+    (
+        'f"📌 Versión detectada desde la Celda 1: {Version.upper()} | Servidor: {server_name}\\n"',
+        'f"📌 Version detected from Cell 1: {Version.upper()} | Server: {server_name}\\n"',
+    ),
+    (
+        '"⚠️ No se encontró el estado de la Celda 1 (.pzcolab_state.json). Se asume b42 estable.\\n"',
+        '"⚠️ Cell 1 state not found (.pzcolab_state.json). Assuming b42 stable.\\n"',
     ),
     (
         'f"⚠️ Línea ignorada (no parece ID de Workshop): {l.strip()[:60]}"',
         'f"⚠️ Line ignored (doesn\'t look like a Workshop ID): {l.strip()[:60]}"',
+    ),
+    (
+        'f"la página menciona Build 42 pero tu servidor es {Version.upper()}"',
+        'f"the page mentions Build 42 but your server is {Version.upper()}"',
+    ),
+    (
+        'f"la página menciona Build 41 pero tu servidor es {Version.upper()}"',
+        'f"the page mentions Build 41 but your server is {Version.upper()}"',
+    ),
+    ('f"      🔗 Requiere: {\', \'.join(reqs)}"', 'f"      🔗 Requires: {\', \'.join(reqs)}"'),
+    ('"⚠️ DEPENDENCIAS FALTANTES:"', '"⚠️ MISSING DEPENDENCIES:"'),
+    ('"\\n⚠️ DEPENDENCIAS FALTANTES:"', '"\\n⚠️ MISSING DEPENDENCIES:"'),
+    (
+        'f"   El mod \'{mid}\' requiere \'{req}\', que no está en la lista. Agrégalo o el servidor puede no cargar."',
+        'f"   Mod \'{mid}\' requires \'{req}\', which is not in the list. Add it or the server may fail to load."',
+    ),
+    (
+        '"🔎 POSIBLES INCOMPATIBILIDADES DE VERSIÓN (heurístico, verifica en el Workshop):"',
+        '"🔎 POSSIBLE VERSION INCOMPATIBILITIES (heuristic, verify on the Workshop):"',
+    ),
+    (
+        '"\\n🔎 POSIBLES INCOMPATIBILIDADES DE VERSIÓN (heurístico, verifica en el Workshop):"',
+        '"\\n🔎 POSSIBLE VERSION INCOMPATIBILITIES (heuristic, verify on the Workshop):"',
+    ),
+    (
+        '"   Si el mod no carga, revisa su página para confirmar compatibilidad."',
+        '"   If the mod fails to load, check its page to confirm compatibility."',
     ),
     (
         '"ℹ️ No hay mods nuevos para procesar. Para ver los actuales usa la Celda 4.1."',

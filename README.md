@@ -73,6 +73,8 @@ You can also paste **Steam collection URLs** — they expand automatically. The 
 
 If automatic detection fails for a mod, use the advanced format `URL|ModIDManual` on that line.
 
+The notebook also flags **possible build incompatibilities** (b41 vs b42) by scanning each mod's Workshop page, and warns about **missing required dependencies** (`require=` in `mod.info`) before you restart the server — the report shows each mod's real name, type and required dependencies.
+
 ## 🛠️ Server Operations
 
 * **Cell 3.1 — Live console:** watch the server output in real time (stop with the ⏹ button).

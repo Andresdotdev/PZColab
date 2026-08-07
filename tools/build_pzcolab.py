@@ -488,18 +488,20 @@ Verás un mensaje en la consola cada 10 minutos. Mientras dejes esa pestaña del
 
 CELDA_4 = code("cell-mods", '''# @title 4. Mods Fáciles: Pega URLs o Colecciones
 # @markdown ---
+# @markdown ### 🧹 Control de Historial
+Limpiar_Lista_Anterior = False # @param {type:"boolean"}
+# @markdown _💡 Activa la casilla si quieres borrar los mods viejos del .ini y quedarte **solo** con los que pegues abajo._
+# @markdown
 # @markdown ### 📥 Entrada de Mods (uno por línea)
 # @markdown _Pega la URL del Workshop o solo el ID numérico. Si es una colección, se expande automáticamente._
 mods_input = "" # @param {type:"raw"}
 # @markdown _Formato avanzado si falla la detección automática: `URL|ModIDManual`_
 # @markdown
-# @markdown ### 🧹 Control de Historial
-Limpiar_Lista_Anterior = False # @param {type:"boolean"}
-# @markdown _💡 Activa la casilla si quieres borrar los mods viejos del .ini y quedarte **solo** con los que pegues abajo._
-# @markdown
 # @markdown ### 📥 Descargar Mods del Workshop
 Descargar_Mods = True # @param {type:"boolean"}
 # @markdown _💡 Descarga cada item vía SteamCMD y detecta el Mod ID real leyendo su `mod.info`._
+# @markdown
+# @markdown **▶️ Para confirmar: ejecuta esta celda con el botón ▶ (o Ctrl+Enter). Los campos del formulario se procesan al ejecutar la celda — no hay un botón interno.**
 
 import os, re, json, zipfile, subprocess
 
@@ -512,16 +514,19 @@ WS_BASE = f"{SERVER_PATH}/steamapps/workshop/content/{WS_APP}"
 try:
     with open(STATE_PATH) as f:
         estado = json.load(f)
-    Version = estado.get("version", "b42 estable")
+    Version = estado.get("version")
     server_name = estado.get("server_name", "PzColab")
+    if not Version:
+        raise ValueError("sin version")
 except Exception:
     Version = "b42 estable"
     server_name = "PzColab"
+    print("⚠️ No se encontró el estado de la Celda 1 (.pzcolab_state.json). Se asume b42 estable.\\n")
 
 is_b42 = Version.startswith("b42")
 INI_PATH = f"{SAVES_PATH}/Server/{server_name}.ini"
 
-print(f"⚙️ Versión activa: {Version.upper()} | Servidor: {server_name}\\n")
+print(f"📌 Versión detectada desde la Celda 1: {Version.upper()} | Servidor: {server_name}\\n")
 
 # --- 1. EXTRAER WORKSHOP ID DE CADA LÍNEA ---
 def extraer_id(linea):
@@ -549,7 +554,7 @@ for l in mods_input.splitlines():
 if not entradas:
     print("ℹ️ No hay mods nuevos para procesar. Para ver los actuales usa la Celda 4.1.")
 else:
-    # --- 2. RESOLVER COLECCIONES (detección y expansión automática) ---
+    # --- 2. RESOLVER COLECCIONES + VERIFICAR COMPATIBILIDAD (1 request por item) ---
     try:
         import requests
     except ImportError:
@@ -557,14 +562,19 @@ else:
 
     HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) PZColab/1.0"}
 
-    def es_coleccion(wsid):
+    def pagina_workshop(wsid):
         if requests is None:
-            return False
+            return None
         try:
             r = requests.get(f"https://steamcommunity.com/sharedfiles/filedetails/?id={wsid}", headers=HEADERS, timeout=20)
-            return r.status_code == 200 and "collectionChildren" in r.text
+            if r.status_code == 200:
+                return r.text
         except Exception:
-            return False
+            pass
+        return None
+
+    def es_coleccion(pagina):
+        return bool(pagina) and "collectionChildren" in pagina
 
     def hijos_coleccion(wsid):
         if requests is None:
@@ -583,6 +593,21 @@ else:
                 continue
         return []
 
+    def analizar_compatibilidad(wsid, pagina):
+        """Heurístico: avisa si la página del mod menciona una build distinta a la activa."""
+        if not pagina:
+            return None
+        txt = pagina.lower()
+        marca41 = bool(re.search(r'\\bb41\\b|build\\s*41', txt))
+        marca42 = bool(re.search(r'\\bb42\\b|build\\s*42|42\\.\\d', txt))
+        if marca41 and marca42:
+            return None
+        if marca42 and not is_b42:
+            return f"la página menciona Build 42 pero tu servidor es {Version.upper()}"
+        if marca41 and is_b42:
+            return f"la página menciona Build 41 pero tu servidor es {Version.upper()}"
+        return None
+
     final = []
     vistos = set()
     def agregar(wsid, manual):
@@ -590,17 +615,23 @@ else:
             vistos.add(wsid)
             final.append((wsid, manual))
 
+    avisos_compat = []
     cola = [(wsid, manual, 0) for wsid, manual in entradas]
     while cola:
         wsid, manual, prof = cola.pop(0)
-        if manual or not es_coleccion(wsid):
+        if manual:
             agregar(wsid, manual)
-        elif prof < 3:
+            continue
+        pagina = pagina_workshop(wsid)
+        if es_coleccion(pagina) and prof < 3:
             print(f"📂 Colección detectada: {wsid} → expandiendo...")
             for h in hijos_coleccion(wsid):
                 cola.append((h, None, prof + 1))
         else:
             agregar(wsid, None)
+            aviso = analizar_compatibilidad(wsid, pagina)
+            if aviso:
+                avisos_compat.append((wsid, aviso))
 
     print(f"🧾 Items a procesar: {len(final)}\\n")
 
@@ -626,13 +657,16 @@ else:
     # --- 4. DETECTAR MOD ID REAL DESDE mod.info ---
     def parse_mod_info(txt):
         mid = mname = None
+        requires = []
         for line in txt.splitlines():
             line = line.strip()
             if line.startswith("id="):
                 mid = line.partition("=")[2].strip()
             elif line.startswith("name="):
                 mname = line.partition("=")[2].strip()
-        return (mid, mname)
+            elif line.startswith("require="):
+                requires = [x.strip() for x in line.partition("=")[2].split(";") if x.strip()]
+        return (mid, mname, requires)
 
     def detectar(wsid):
         base = f"{WS_BASE}/{wsid}"
@@ -654,7 +688,7 @@ else:
                                         res.append(parse_mod_info(z.read(nombre).decode("utf-8", errors="ignore")))
                         except Exception:
                             pass
-        return [(mid, mname) for mid, mname in res if mid]
+        return [(mid, mname, requires) for mid, mname, requires in res if mid]
 
     def clasificar(nombre, mid):
         n = f"{nombre} {mid}".lower()
@@ -664,11 +698,14 @@ else:
         return "qol"
 
     nuevos = []  # (wsid, mod_id, tipo, nombre)
+    requerimientos = {}
     for wsid, manual in final:
         detectados = detectar(wsid)
         if detectados:
-            for mid, mname in detectados:
+            for mid, mname, requires in detectados:
                 nuevos.append((wsid, mid, clasificar(mname, mid), mname or mid))
+                if requires:
+                    requerimientos[mid] = requires
         elif manual:
             nuevos.append((wsid, manual, clasificar(manual, manual), manual))
         else:
@@ -739,7 +776,28 @@ else:
             print("=" * 60)
             for wsid, mid, tipo, nombre in combinada:
                 print(f"   {iconos.get(tipo, '⚙️')} {nombre} ({tipo}) | Workshop: {wsid}")
+                reqs = requerimientos.get(mid)
+                if reqs:
+                    print(f"      🔗 Requiere: {', '.join(reqs)}")
             print("-" * 60)
+
+            faltantes = []
+            ids_configurados = {m[1] for m in combinada}
+            for mid, reqs in requerimientos.items():
+                for req in reqs:
+                    if req not in ids_configurados:
+                        faltantes.append((mid, req))
+            if faltantes:
+                print("\\n⚠️ DEPENDENCIAS FALTANTES:")
+                for mid, req in faltantes:
+                    print(f"   El mod '{mid}' requiere '{req}', que no está en la lista. Agrégalo o el servidor puede no cargar.")
+
+            if avisos_compat:
+                print("\\n🔎 POSIBLES INCOMPATIBILIDADES DE VERSIÓN (heurístico, verifica en el Workshop):")
+                for wsid, motivo in avisos_compat:
+                    print(f"   ⚠️ Workshop {wsid}: {motivo}")
+                print("   Si el mod no carga, revisa su página para confirmar compatibilidad.")
+
             print(f"✅ .ini actualizado: {INI_PATH}")
             print("   Reinicia el servidor (Celda 3) para aplicar los mods.")
 ''')
