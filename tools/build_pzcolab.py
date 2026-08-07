@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Genera PZ_Colab.ipynb (ES) y PZ_Colab_EN.ipynb (EN) de forma programática."""
+"""Genera PZ_Colab_ES.ipynb (ES) y PZ_Colab_EN.ipynb (EN) de forma programática."""
 import json
 import sys
 from pathlib import Path
@@ -11,7 +11,7 @@ except Exception:
     pass
 
 ROOT = Path(__file__).resolve().parent.parent
-TARGET = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT / "PZ_Colab.ipynb"
+TARGET = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT / "PZ_Colab_ES.ipynb"
 
 def md(source):
     return {
@@ -30,7 +30,7 @@ def code(cell_id, source):
     }
 
 BADGE = md(
-    '<a href="https://colab.research.google.com/github/Andresdotdev/PZColab/blob/main/PZ_Colab.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>'
+    '<a href="https://colab.research.google.com/github/Andresdotdev/PZColab/blob/main/PZ_Colab_ES.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>'
 )
 
 INDICE = md('''🗺️ **Guía rápida del cuaderno**
@@ -973,7 +973,7 @@ def validar(conjunto, nombre):
                 sys.exit(1)
             print(f"✅ Celda {c['metadata']['id']} OK ({len(c['source'])} líneas)")
 
-validar(cells, "ES (PZ_Colab.ipynb)")
+validar(cells, "ES (PZ_Colab_ES.ipynb)")
 validar(cells_en, "EN (PZ_Colab_EN.ipynb)")
 
 def armar_notebook(conjunto):

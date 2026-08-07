@@ -1,7 +1,7 @@
 # 🧟‍♂️ PZColab - Servidor de Project Zomboid en Google Colab
 
 [![Licencia: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Abrir en Colab](https://img.shields.io/badge/Abrir%20En-Colab-orange.svg?logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/Andresdotdev/PZColab/blob/main/PZ_Colab.ipynb)
+[![Abrir en Colab](https://img.shields.io/badge/Abrir%20En-Colab-orange.svg?logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/Andresdotdev/PZColab/blob/main/PZ_Colab_ES.ipynb)
 
 **Read this in: [English 🇬🇧](README.md)**
 
@@ -27,7 +27,7 @@ Este proyecto está pensado como una herramienta open-source para facilitar el t
 
 ## 🚀 Uso Rápido
 
-1. Sube o abre el cuaderno interactivo (`PZ_Colab.ipynb`) en Google Colab.
+1. Sube o abre el cuaderno interactivo (`PZ_Colab_ES.ipynb`) en Google Colab.
 2. Ejecuta la **Celda 1** para elegir la versión e instalar el servidor y conectar tu Google Drive.
 3. Ejecuta la **Celda 2** para generar y reclamar tu enlace persistente de Playit.gg (Solo es necesario configurarlo la primera vez).
 4. Ejecuta la **Celda 3** para encender el servidor. ¡Tus amigos pueden conectarse usando la IP y puerto que te asigne Playit!

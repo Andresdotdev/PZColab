@@ -12,7 +12,7 @@ from pathlib import Path
 sys.stdout.reconfigure(encoding="utf-8")
 
 ROOT = Path(__file__).resolve().parent.parent
-NB = sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "PZ_Colab.ipynb")
+NB = sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "PZ_Colab_ES.ipynb")
 ES = "EN" not in NB
 print("Notebook:", NB, "(ES)" if ES else "(EN)")
 nb = json.load(open(NB, encoding="utf-8"))

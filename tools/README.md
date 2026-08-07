@@ -15,8 +15,8 @@ Regenerates **both** notebooks from the single source of truth:
 python tools/build_pzcolab.py
 ```
 
-- Output: `PZ_Colab.ipynb` (Spanish) and `PZ_Colab_EN.ipynb` (English) at the repo root.
-- The English notebook is derived from the Spanish one by applying the translation table in `traducciones.py` — **never edit the EN notebook by hand**; edit the builder sources and the translation table instead.
+- Output: `PZ_Colab_ES.ipynb` (Spanish) and `PZ_Colab_EN.ipynb` (English) at the repo root.
+- The English notebook is the **primary** one in the repo (README, badges and links point to it). The English version is derived from the Spanish source by applying the translation table in `traducciones.py` — **never edit the notebooks by hand**; edit the builder sources and the translation table instead.
 - The builder validates the Python syntax of every code cell (IPython magics like `!` are filtered before compiling).
 
 ## Run the functional tests

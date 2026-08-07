@@ -12,7 +12,7 @@ Thanks for helping make free Project Zomboid servers on Google Colab better for 
 
 ## Development notes
 
-- The product lives in **`PZ_Colab.ipynb`** (Spanish) and **`PZ_Colab_EN.ipynb`** (English). The English notebook is generated from the Spanish one through a translation table — keep both in sync.
+- The product lives in **`PZ_Colab_EN.ipynb`** (English, primary) and **`PZ_Colab_ES.ipynb`** (Spanish). The English notebook is derived from the Spanish source through a translation table — keep both in sync.
 - **Keep UI messages clean:** users run these cells in Colab, so keep console output purposeful and non-noisy.
 - **Do not change the pinned Playit.gg version (`v0.15.26`)** — newer agent versions don't work well as a tunnel on Colab.
 - **Respect Colab limits:** ~12.7 GB RAM (keep `-Xmx` ≤ 8 GB) and free sessions up to ~12 h.

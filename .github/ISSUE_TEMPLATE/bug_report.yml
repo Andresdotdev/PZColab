@@ -24,8 +24,8 @@ body:
     attributes:
       label: Notebook
       options:
-        - PZ_Colab.ipynb (Spanish)
         - PZ_Colab_EN.ipynb (English)
+        - PZ_Colab_ES.ipynb (Spanish)
     validations:
       required: true
   - type: input

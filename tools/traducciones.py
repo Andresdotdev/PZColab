@@ -96,7 +96,7 @@ TRADUCCIONES = [
     ),
     # --- Badge: apunta al notebook EN ---
     (
-        "PZ_Colab.ipynb",
+        "PZ_Colab_ES.ipynb",
         "PZ_Colab_EN.ipynb",
     ),
     # --- Celda 1 ---

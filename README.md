@@ -47,7 +47,7 @@ Run your own **free Project Zomboid dedicated server** in the cloud using **Goog
 3. Run **Cell 2** — claim your persistent Playit.gg tunnel (first time only).
 4. Run **Cell 3** — the server starts in the background. Share the IP/port that Playit assigns!
 
-> 💡 Spanish speakers: use the Spanish version **`PZ_Colab.ipynb`** — [Español 🇪🇸](README.es.md).
+> 💡 Spanish speakers: use the Spanish version **`PZ_Colab_ES.ipynb`** — [Español 🇪🇸](README.es.md).
 
 ## 🎮 Supported Game Versions
 
