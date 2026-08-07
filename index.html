@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PZColab — Free Project Zomboid Dedicated Server on Google Colab</title>
+  <meta name="description" content="Run a free Project Zomboid dedicated server (b41 legacy & b42 stable) on Google Colab. SteamCMD installation, persistent Google Drive saves, Playit.gg tunnel, Steam Workshop mods with automatic Mod ID detection, crash watchdog and backups. No port forwarding required.">
+  <meta property="og:title" content="PZColab — Free Project Zomboid Server on Google Colab">
+  <meta property="og:description" content="Free Project Zomboid dedicated server (b41 & b42) running on Google Colab with SteamCMD, persistent Drive saves, Playit.gg tunnel, Workshop mods & collections, watchdog and backups.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://andresdotdev.github.io/PZColab/">
+  <meta name="theme-color" content="#111820">
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: #111820; color: #e6e6e6; line-height: 1.6; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 48px 24px 64px; }
+    h1 { font-size: 2.2rem; margin: 0 0 8px; color: #fff; }
+    h2 { margin-top: 40px; color: #fff; border-bottom: 1px solid #2a3340; padding-bottom: 8px; }
+    .tag { color: #9fb0c3; font-size: 1.15rem; margin-bottom: 24px; }
+    .badge-row a { margin-right: 8px; }
+    .cta { margin: 28px 0; }
+    .btn { display: inline-block; background: #f9ab00; color: #111; font-weight: 700;
+           padding: 12px 22px; border-radius: 6px; text-decoration: none; }
+    .btn:hover { background: #ffc233; }
+    ul { padding-left: 22px; }
+    li { margin: 6px 0; }
+    code { background: #1d2733; padding: 2px 6px; border-radius: 4px; font-size: .92em; }
+    a { color: #7cb8ff; }
+    .footer { margin-top: 56px; color: #7c8694; font-size: .9rem; border-top: 1px solid #2a3340; padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🧟‍♂️ PZColab</h1>
+    <p class="tag">Run a <strong>free Project Zomboid dedicated server</strong> on <strong>Google Colab</strong> — no VPS, no port forwarding, no credit card.</p>
+
+    <p class="badge-row">
+      <a href="https://github.com/Andresdotdev/PZColab"><img src="https://img.shields.io/github/stars/Andresdotdev/PZColab?style=social" alt="GitHub stars"></a>
+      <a href="https://github.com/Andresdotdev/PZColab/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT license"></a>
+      <a href="https://github.com/Andresdotdev/PZColab"><img src="https://img.shields.io/badge/Project%20Zomboid-b41%20%26%20b42-red.svg" alt="Project Zomboid b41 and b42"></a>
+    </p>
+
+    <p class="cta"><a class="btn" href="https://colab.research.google.com/github/Andresdotdev/PZColab/blob/main/PZ_Colab_EN.ipynb">Open in Google Colab ▶</a></p>
+
+    <h2>Why PZColab?</h2>
+    <ul>
+      <li><strong>Zero infrastructure cost</strong> — the server runs on Colab's free tier.</li>
+      <li><strong>Works on Build 42 (stable) and Build 41 (legacy)</strong> — pick the version at install.</li>
+      <li><strong>Automatic installation</strong> with SteamCMD and 6 GB memory tuning for Colab.</li>
+      <li><strong>Persistent worlds</strong> — saves and configs live on your Google Drive.</li>
+      <li><strong>Easy mods</strong> — paste Workshop URLs or whole Steam collections; the notebook detects each mod's real ID automatically.</li>
+      <li><strong>Public address</strong> via the built-in Playit.gg tunnel — friends join in seconds.</li>
+      <li><strong>Crash watchdog</strong>, clean shutdown, live console, saves backup and log diagnostics.</li>
+    </ul>
+
+    <h2>Quick start</h2>
+    <ol>
+      <li>Open <code>PZ_Colab_EN.ipynb</code> in Google Colab (button above).</li>
+      <li>Run <strong>Cell 1</strong> — choose the game version, installs the server and mounts Drive.</li>
+      <li>Run <strong>Cell 2</strong> — claim your persistent Playit.gg tunnel (first time only).</li>
+      <li>Run <strong>Cell 3</strong> — the server starts; share the IP/port Playit assigns you.</li>
+    </ol>
+
+    <p><a href="https://github.com/Andresdotdev/PZColab">📖 View the full documentation on GitHub</a> · <a href="https://github.com/Andresdotdev/PZColab/blob/main/README.es.md">🇪🇸 Español</a></p>
+
+    <p class="footer">
+      PZColab is an open-source (MIT) community project and is not affiliated with The Indie Stone or Google.
+      <br>Project Zomboid is a registered trademark of The Indie Stone.
+    </p>
+  </div>
+</body>
+</html>
