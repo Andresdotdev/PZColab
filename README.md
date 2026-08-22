@@ -31,11 +31,10 @@ Run your own **free Project Zomboid dedicated server** in the cloud using **Goog
 * **Version selector:** **b42 stable** (recommended), **b41 legacy** and **b42 unstable** — one synchronized choice shared across all cells via a state file on Drive.
 * **No port forwarding:** built-in [Playit.gg](https://playit.gg/) tunnel gives your server a public address anyone can join.
 * **Cloud persistence:** saves, configs and player profiles live on your Google Drive (`/MyDrive/ZomboidSaves`) — nothing is lost when the Colab session ends.
-* **Configurable memory:** choose 4 / 6 / 8 GB of server RAM in Cell 3 — the notebook re-patches `-Xms/-Xmx` on every start and **auto-caps** the value to a safe limit based on the runtime's real RAM (never more than 8 GB on Colab).
+* **Configurable memory:** choose 4 / 6 / 8 GB of server RAM in Cell 2 — the notebook re-patches `-Xms/-Xmx` on every start and **auto-caps** the value to a safe limit based on the runtime's real RAM (never more than 8 GB on Colab).
+* **Playit tunnel + live console + clean shutdown (unified):** Cell 2 starts the server with a watchdog, claims or reuses your persistent Playit.gg tunnel, streams the live console below, and **auto-saves + shuts down cleanly** when you stop the cell — no separate shutdown cell needed.
 * **Easy Workshop mods + collections:** paste a Workshop URL or numeric ID (one per line) — or a whole Steam **collection** — and the notebook downloads each item via SteamCMD, **auto-detects the real Mod ID** from its `mod.info`, classifies them (Libraries / UI / Vehicles / QoL) and writes them to the server `.ini` without duplicates.
 * **Crash watchdog:** the server auto-restarts on failure (configurable retry count).
-* **Clean shutdown:** sends `save` then `quit` so the world is saved safely.
-* **Live console:** a `tail` cell shows the server console in real time.
 * **Saves backup:** one-click `.tar.gz` backups on Drive with configurable retention.
 * **Advanced log diagnostics:** scans log files and groups errors per mod — Lua crashes, Steam Workshop failures, **out-of-memory problems, server/port errors and save failures** — naming the actual culprit and suggesting fixes.
 * **Anti-idle script:** a browser console script that prevents Google Colab from disconnecting your session.
@@ -44,8 +43,7 @@ Run your own **free Project Zomboid dedicated server** in the cloud using **Goog
 
 1. Open **`PZ_Colab_EN.ipynb`** in Google Colab (use the badge above or *File → Open notebook → GitHub*).
 2. Run **Cell 1** — pick the game version and install the server (mounts Google Drive automatically).
-3. Run **Cell 2** — claim your persistent Playit.gg tunnel (first time only).
-4. Run **Cell 3** — the server starts in the background. Share the IP/port that Playit assigns!
+3. Run **Cell 2** — starts the server, claims or reuses your persistent Playit.gg tunnel (first time you authorize; later runs skip the prompt), streams the live console, and **auto-saves + shuts down cleanly** when you press ⏹. Share the IP/port that Playit assigns!
 
 > 💡 Spanish speakers: use the Spanish version **`PZ_Colab_ES.ipynb`** — [Español 🇪🇸](README.es.md).
 
@@ -77,18 +75,19 @@ The notebook also flags **possible build incompatibilities** (b41 vs b42) by sca
 
 ## 🛠️ Server Operations
 
-* **Cell 3.1 — Live console:** watch the server output in real time (stop with the ⏹ button).
-* **Cell 3.2 — Clean shutdown:** saves the world and shuts the server down safely.
-* **Cell 5 — Backup:** creates a `.tar.gz` of your saves in `MyDrive/ZomboidSaves_backups` with retention of the last N copies.
+* **Cell 2 — Server + Console + Auto-shutdown (unified):** runs the server with the crash watchdog, streams the live console below, and **auto-saves + shuts down cleanly** when you press ⏹ (or when the cell is interrupted).
+* **Cell 3 — Easy Mods:** paste a Workshop URL or collection (see below).
+* **Cell 3.1 — Log Diagnostics:** scans logs and groups errors per mod.
+* **Cell 4 — Backup:** creates a `.tar.gz` of your saves in `MyDrive/ZomboidSaves_backups` with retention of the last N copies.
 * **Anti-idle (end of notebook):** paste the browser script into the Colab page console (F12) to keep the session alive.
 
 ## 🧠 Log Diagnostics
 
-If the server fails to boot or mods misbehave, run **Cell 4.1 — Server Inspector & Advanced Diagnostics**. It analyzes your Drive logs and prints:
+If the server fails to boot or mods misbehave, run **Cell 3.1 — Server Inspector & Advanced Diagnostics**. It analyzes your Drive logs and prints:
 - Exact number of critical Lua errors.
 - The mod/script responsible for the failure.
 - Steam Workshop connection alerts.
-- **Out-of-memory problems** (with a hint to raise memory in Cell 3 or reduce players/mods), **server/port errors** and **save failures**.
+- **Out-of-memory problems** (with a hint to raise memory in Cell 2 or reduce players/mods), **server/port errors** and **save failures**.
 
 ## ❓ FAQ
 
@@ -98,7 +97,7 @@ If the server fails to boot or mods misbehave, run **Cell 4.1 — Server Inspect
 
 **Do I need to open ports on my router?** No. Playit.gg creates a public tunnel without port forwarding.
 
-**How much RAM does the server use?** Cell 3 lets you pick 4, 6 or 8 GB. The notebook automatically caps your choice to a safe value based on the runtime's real RAM (8 GB max on Colab's ~12.7 GB machines — the rest is reserved for the system, the tunnel and Colab itself).
+**How much RAM does the server use?** Cell 2 lets you pick 4, 6 or 8 GB. The notebook automatically caps your choice to a safe value based on the runtime's real RAM (8 GB max on Colab's ~12.7 GB machines — the rest is reserved for the system, the tunnel and Colab itself).
 
 **Will my world be lost when Colab disconnects?** No. The world and configs are stored on your Google Drive and reloaded on the next session.
 
@@ -108,7 +107,7 @@ If the server fails to boot or mods misbehave, run **Cell 4.1 — Server Inspect
 
 * **Playit.gg is pinned to `v0.15.26`** on purpose (Colab console compatibility). Do not upgrade.
 * **Colab limits:** free sessions last up to 12 hours with an inactivity timeout (~90 min). Use the notebook's anti-idle script and restart the server after reconnecting.
-* **Port changes:** if you change the UDP port in Cell 3, update the matching tunnel in your [Playit.gg](https://playit.gg/account) dashboard.
+* **Port changes:** if you change the UDP port in Cell 2, update the matching tunnel in your [Playit.gg](https://playit.gg/account) dashboard.
 
 ## 🤝 Contributing
 

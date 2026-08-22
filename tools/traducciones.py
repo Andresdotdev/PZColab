@@ -181,8 +181,9 @@ TRADUCCIONES = [
         'f"💾 Memoria del servidor: {memoria_final} GB (tope seguro de este runtime: {tope_seguro} GB)."',
         'f"💾 Server memory: {memoria_final} GB (safe cap for this runtime: {tope_seguro} GB)."',
     ),
-    # --- Celda 2 ---
-    ("# @title 2. Configurar Playit.gg Persistente", "# @title 2. Configure Persistent Playit.gg"),
+    # --- Celda 2/3 (unificada: playit + servidor + consola + apagado) ---
+    ("# @title 2. Configurar Playit.gg Persistente", "# @title 2. Configure Playit.gg Tunnel (first time)"),
+    ("# @title 2. Iniciar Servidor + Túnel Playit + Consola (Auto-Apagado)", "# @title 2. Start Server + Playit Tunnel + Console (Auto-shutdown)"),
     ('"❌ Google Drive NO está montado. Ejecuta primero la Celda 1."', '"❌ Google Drive is NOT mounted. Run Cell 1 first."'),
     ('"✅ Configuración persistente enlazada."', '"✅ Persistent config linked."'),
     (
@@ -192,11 +193,15 @@ TRADUCCIONES = [
     ('"   úsala solo si necesitas reclamar un túnel nuevo."', '"   use it only if you need to claim a new tunnel."'),
     ('"🚀 Iniciando Playit..."', '"🚀 Starting Playit..."'),
     ('"⚠️ SOLO la primera vez tendrás que reclamar el túnel."', '"⚠️ Only the first time you\'ll need to claim the tunnel."'),
-    # --- Celda 3 ---
-    ("# @title 3. Iniciar Servidor (Watchdog + Config Avanzada)", "# @title 3. Start Server (Watchdog + Advanced Config)"),
+    # --- @markdown de la Celda 3 ---
     ("# @markdown ### 🎮 Parámetros del Servidor", "# @markdown ### 🎮 Server Parameters"),
     ("# @markdown _💡 Si cambias el puerto, actualiza el túnel en playit.gg._", "# @markdown _💡 If you change the port, update the tunnel at playit.gg._"),
     ("# @markdown ### 🛡️ Watchdog (auto-reinicio ante crashes)", "# @markdown ### 🛡️ Watchdog (auto-restart on crashes)"),
+    (
+        'abortar("❌ No se encontró start-server.sh. Ejecuta primero la Celda 1 (instalación).")',
+        'abortar("❌ start-server.sh not found. Run Cell 1 (installation) first.")',
+    ),
+    # --- strings de la Celda 3 (unificada) ---
     ('f"📌 Versión activa: {Version}"', 'f"📌 Active version: {Version}"'),
     (
         '"🛑 Servidor anterior detectado; se detiene antes de continuar."',
@@ -217,39 +222,21 @@ TRADUCCIONES = [
         'f"⚠️ Puerto cambiado a {port}. Actualiza el túnel en https://playit.gg/account"',
         'f"⚠️ Port changed to {port}. Update the tunnel at https://playit.gg/account"',
     ),
-    ('"✅ Túnel Playit encendido en el fondo."', '"✅ Playit tunnel running in the background."'),
-    (
-        'abortar("❌ No se encontró start-server.sh. Ejecuta primero la Celda 1 (instalación).")',
-        'abortar("❌ start-server.sh not found. Run Cell 1 (installation) first.")',
-    ),
+    # --- playit inline/unified ---
+    ('"🚀 Primera ejecución: reclama tu túnel Playit.gg en la ventana que se abre."', '"🚀 First run: claim your Playit.gg tunnel in the window that opens."'),
+    ('"⚠️ Autoriza el enlace y vuelve aquí. La celda se quedará esperando."', '"⚠️ Authorize the link and return here. The cell will wait."'),
+    ('"✅ Túnel Playit.gg en segundo plano (handle guardado):"', '"✅ Playit.gg tunnel running in the background (handle saved):"'),
+    ('"⚠️ No se pudo reclamar el túnel de Playit.gg. El servidor funciona local pero no es accesible externamente."', '"⚠️ Could not claim the Playit.gg tunnel. Server runs locally but is not reachable externally."'),
+    # --- consola en vivo integrada ---
     ('"🔥 Servidor arrancado en segundo plano."', '"🔥 Server started in the background."'),
-    ('f"📄 Consola en vivo: Celda 3.1 (tail de {LOG_PATH})"', 'f"📄 Live console: Cell 3.1 (tail of {LOG_PATH})"'),
-    ('"🛑 Apagado limpio: Celda 3.2"', '"🛑 Clean shutdown: Cell 3.2"'),
+    ('"📄 Consola en vivo integrada abajo (⏹ para detener y apagar de forma limpia)."', '"📄 Live console integrated below (⏹ to stop and shut down cleanly)."'),
+    ('"⚠️ Aún no hay log. El streaming empezará en cuanto arranque el servidor."', '"⚠️ No log yet. Streaming will start once the server boots."'),
+    ('🛑 Interrupción manual detectada: iniciando apagado limpio..."', '🛑 Manual interruption detected: starting clean shutdown..."'),
     (
-        'f"🛡️ Watchdog activo: hasta {max_reinicios} reinicios automáticos."',
-        'f"🛡️ Watchdog active: up to {max_reinicios} automatic restarts."',
+        '"🎯 Cierre completo: servidor guardado y túnel detenido."',
+        '"🎯 Complete shutdown: world saved and tunnel stopped."',
     ),
-    # --- Celda 3.1 ---
-    ("# @title 3.1 Consola en Vivo del Servidor (tail)", "# @title 3.1 Live Server Console (tail)"),
-    (
-        "# @markdown _Ejecuta esta celda para ver la consola del servidor en tiempo real._",
-        "# @markdown _Run this cell to watch the server console in real time._",
-    ),
-    (
-        "# @markdown _Para detenerla, presiona el botón ⏹ (Interrumpir ejecución)._",
-        "# @markdown _To stop it, press the ⏹ button (Interrupt execution)._",
-    ),
-    ('"⚠️ Todavía no hay log. Ejecuta primero la Celda 3."', '"⚠️ No log yet. Run Cell 3 first."'),
-    (
-        '"📄 Mostrando últimas 40 líneas + seguimiento en vivo (⏹ para salir)...\\n"',
-        '"📄 Showing last 40 lines + live follow (⏹ to exit)...\\n"',
-    ),
-    # --- Celda 3.2 ---
-    ("# @title 3.2 Apagado Limpio del Servidor", "# @title 3.2 Clean Server Shutdown"),
-    (
-        "# @markdown _Guarda el mundo (save) y apaga el servidor de forma ordenada._",
-        "# @markdown _Saves the world and shuts the server down cleanly._",
-    ),
+    # --- apagado limpio (mantenido, ahora en el finally de la misma celda) ---
     ('"💾 Enviando SAVE..."', '"💾 Sending SAVE..."'),
     ('"🛑 Enviando QUIT..."', '"🛑 Sending QUIT..."'),
     ('"✅ Servidor apagado de forma segura."', '"✅ Server shut down safely."'),
@@ -260,6 +247,10 @@ TRADUCCIONES = [
     ),
     ('"   Intentando pkill suave..."', '"   Trying graceful pkill..."'),
     ('"✅ Señales de terminación enviadas."', '"✅ Termination signals sent."'),
+    (
+        'f"🛡️ Watchdog activo: hasta {max_reinicios} reinicios automáticos."',
+        'f"🛡️ Watchdog active: up to {max_reinicios} automatic restarts."',
+    ),
     # --- Celda 4 ---
     ("# @title 4. Mods Fáciles: Pega URLs o Colecciones", "# @title 4. Easy Mods: Paste URLs or Collections"),
     ("# @markdown ### 📥 Entrada de Mods (uno por línea)", "# @markdown ### 📥 Mod Input (one per line)"),

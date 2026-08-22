@@ -16,11 +16,10 @@ Este proyecto está pensado como una herramienta open-source para facilitar el t
 * **Versiones seleccionables:** **b42 estable** (recomendada), **b41 legacy** y **b42 unstable** — el selector es único y sincronizado entre celdas mediante un archivo de estado en Drive.
 * **Túnel de Red Integrado:** Configuración automática de [Playit.gg](https://playit.gg/) para asignar IPs públicas sin necesidad de abrir puertos (Port Forwarding).
 * **Persistencia en la Nube:** Enlace directo con Google Drive (`/MyDrive/ZomboidSaves`) para asegurar que el mundo, las configuraciones y los perfiles de los jugadores no se pierdan al cerrar la sesión.
-* **Memoria configurable:** elige 4 / 6 / 8 GB de RAM del servidor en la Celda 3 — el cuaderno re-aplica el parche `-Xms/-Xmx` en cada arranque y **limita automáticamente** el valor según la RAM real del runtime (nunca más de 8 GB en Colab).
+* **Memoria configurable:** elige 4 / 6 / 8 GB de RAM del servidor en la Celda 2 — el cuaderno re-aplica el parche `-Xms/-Xmx` en cada arranque y **limita automáticamente** el valor según la RAM real del runtime (nunca más de 8 GB en Colab).
+* **Túnel Playit + Consola en Vivo + Apagado Automático (unificado):** la Celda 2 enciende el servidor con watchdog, reclama o reutiliza tu túnel Playit.gg persistente, muestra la consola en vivo debajo y almacena el mundo guardándolo (`save` + `quit`) de forma ordenada al detener la celda con ⏹.
 * **Inyector de Mods Fácil + Colecciones:** Pega la URL del Workshop (o solo el ID) de cada mod — uno por línea — o una colección entera de Steam y el sistema la expande. Descarga cada item vía SteamCMD, **detecta automáticamente el Mod ID real** leyendo el `mod.info`, los clasifica (Librerías, UI, Vehículos, QoL) y los escribe en el `.ini` sin duplicados.
 * **Watchdog de Crashes:** Auto-reinicio del servidor ante fallos (número de reintentos configurable).
-* **Apagado Limpio:** Envía `save` y `quit` al servidor para que el mundo se guarde de forma ordenada.
-* **Consola en Vivo:** Celda de `tail` para ver la consola del servidor en tiempo real.
 * **Backup de Saves:** Genera respaldos `.tar.gz` en Drive con retención configurable.
 * **🛠️ Diagnóstico Avanzado de Logs:** Un script analizador único que escanea los archivos de registro (`DebugLog-server.txt`) para detectar *crashes*, errores de Lua y fallos de Steam Workshop, señalando qué mod específico está causando inestabilidad en el servidor.
 * **Anti-AFK:** Script integrado para la consola del navegador que previene la desconexión por inactividad en Google Colab.
@@ -29,8 +28,7 @@ Este proyecto está pensado como una herramienta open-source para facilitar el t
 
 1. Sube o abre el cuaderno interactivo (`PZ_Colab_ES.ipynb`) en Google Colab.
 2. Ejecuta la **Celda 1** para elegir la versión e instalar el servidor y conectar tu Google Drive.
-3. Ejecuta la **Celda 2** para generar y reclamar tu enlace persistente de Playit.gg (Solo es necesario configurarlo la primera vez).
-4. Ejecuta la **Celda 3** para encender el servidor. ¡Tus amigos pueden conectarse usando la IP y puerto que te asigne Playit!
+3. Ejecuta la **Celda 2** para encender el servidor, reclamar tu túnel Playit.gg (la primera vez autoriza el enlace; en ejecuciones posteriores se reutiliza la config de Drive), ver la consola en vivo y apagar el servidor de forma ordenada (con guardado automático) al detener la celda con ⏹. ¡Tus amigos pueden conectarse usando la IP y puerto que te asigne Playit!
 
 ### Versiones disponibles (Celda 1)
 
@@ -42,7 +40,7 @@ Este proyecto está pensado como una herramienta open-source para facilitar el t
 
 La versión elegida se guarda en `MyDrive/ZomboidSaves/.pzcolab_state.json` y es leída automáticamente por las demás celdas (no hace falta repetir la selección). Re-ejecutar la **Celda 1** es rápido: si el servidor ya está instalado con la misma versión, omite la descarga; si cambiaste de versión, reinstala automáticamente y detiene el servidor activo.
 
-### Gestión de Mods (Celda 4)
+### Gestión de Mods (Celda 3)
 
 Pega cada mod en su propia línea — la **URL del Workshop** o **solo el ID numérico**:
 
@@ -58,28 +56,29 @@ Si algún mod falla la detección automática, usa el formato avanzado `URL|ModI
 
 La celda también avisa de **posibles incompatibilidades de build** (b41 vs b42) escaneando la página del Workshop de cada mod, y de **dependencias requeridas faltantes** (`require=` en `mod.info`) antes de reiniciar el servidor — el reporte muestra el nombre real, el tipo y las dependencias de cada mod.
 
-> 💡 Si la contraseña de admin se deja vacía en la Celda 3, se recupera del `.ini` existente o se genera una automáticamente (se muestra en consola).
+> 💡 Si la contraseña de admin se deja vacía en la Celda 2, se recupera del `.ini` existente o se genera una automáticamente (se muestra en consola).
 
 ### Operación del servidor
 
-* **Celda 3.1 — Consola en vivo:** muestra la salida del servidor en tiempo real (detener con el botón ⏹).
-* **Celda 3.2 — Apagado limpio:** guarda el mundo y apaga el servidor ordenadamente.
-* **Celda 5 — Backup:** crea un `.tar.gz` de tus saves en `MyDrive/ZomboidSaves_backups` con retención de las N últimas copias.
+* **Celda 2 — Servidor + Consola + Auto-Apagado (unificado):** enciende el servidor con watchdog, reclama o reutiliza el túnel Playit.gg, muestra la consola en vivo debajo y **guarda el mundo y apaga de forma ordenada** al detener la celda con ⏹.
+* **Celda 3 — Mods Fáciles:** pega URLs o colecciones del Workshop (ver arriba).
+* **Celda 3.1 — Diagnóstico de errores:** escanea logs y agrupa errores por mod.
+* **Celda 4 — Backup:** crea un `.tar.gz` de tus saves en `MyDrive/ZomboidSaves_backups` con retención de las N últimas copias.
 * **Anti-AFK (al final del cuaderno):** script para la consola del navegador que evita la desconexión por inactividad mientras el servidor corre.
 
 ## 🧠 Diagnóstico de Errores
 
-Si el servidor presenta problemas al arrancar, ejecuta la herramienta **4.1 Inspector y Diagnóstico Avanzado**. Este bloque analizará el historial de Google Drive y te entregará un reporte visual en consola indicando:
+Si el servidor presenta problemas al arrancar, ejecuta la herramienta **3.1 Inspector y Diagnóstico Avanzado**. Este bloque analizará el historial de Google Drive y te entregará un reporte visual en consola indicando:
 - Número exacto de errores críticos de Lua.
 - Nombre del Mod/Script culpable del fallo.
 - Alertas de conexión con Steam.
-- **Problemas de memoria** (con sugerencia de subir la memoria en la Celda 3 o reducir jugadores/mods), **errores de servidor/puerto** y **fallos al guardar**.
+- **Problemas de memoria** (con sugerencia de subir la memoria en la Celda 2 o reducir jugadores/mods), **errores de servidor/puerto** y **fallos al guardar**.
 
 ## ⚠️ Notas Importantes
 
 * **Playit.gg:** la versión del agente está fijada en `v0.15.26` a propósito (compatibilidad con consola de Colab). No actualizar.
 * **Límites de Colab:** las sesiones gratuitas duran hasta 12 horas y tienen un timeout por inactividad (~90 min). Usa el script Anti-AFK del cuaderno y reinicia el servidor al reconectar el runtime.
-* **Cambio de puerto:** si cambias el puerto UDP en la Celda 3, recuerda actualizar el túnel correspondiente en tu panel de [Playit.gg](https://playit.gg/account).
+* **Cambio de puerto:** si cambias el puerto UDP en la Celda 2, recuerda actualizar el túnel correspondiente en tu panel de [Playit.gg](https://playit.gg/account).
 
 ## 🤝 Contribuciones y Pruebas de Comunidad
 

@@ -38,15 +38,12 @@ INDICE = md('''🗺️ **Guía rápida del cuaderno**
 | Celda | Acción |
 |---|---|
 | 1 | 🚀 Instalar el servidor (elegir versión b42 / b41) |
-| 2 | 🔗 Configurar el túnel Playit (solo la 1ª vez) |
-| 3 | 🔥 Encender el servidor (con watchdog) |
-| 3.1 | 📄 Consola del servidor en vivo |
-| 3.2 | 🛑 Apagado limpio del servidor |
-| 4 | 📦 Mods: inyección + descarga Workshop |
-| 4.1 | 🩺 Diagnóstico de logs por mod |
-| 5 | 💾 Backup de saves en Drive |
+| 2 | 🔥 Encender servidor + reclamar túnel Playit + consola en vivo + apagado limpio (integrado) |
+| 3 | 📦 Mods: inyección + descarga Workshop |
+| 3.1 | 🩺 Diagnóstico de logs por mod |
+| 4 | 💾 Backup de saves en Drive |
 
-_Flujo típico: 1 → 2 → 3 → (3.1 opcional) → 3.2 al terminar. Las celdas 4, 4.1 y 5 se usan bajo demanda._
+_Flujo típico: 1 → 2 (encender + jugar + apagar). Las celdas 3, 3.1 y 4 se usan bajo demanda._
 ''')
 
 CELDA_1 = code("cell-instalar", '''# @title 1. Instalar Servidor y Dependencias
@@ -198,43 +195,7 @@ else:
     print("\\n⚠️ SteamCMD falló al validar el ejecutable. Intenta correr la celda de nuevo.")
 ''')
 
-CELDA_2 = code("cell-playit", '''# @title 2. Configurar Playit.gg Persistente
-
-import os
-
-PLAYIT_DRIVE = "/content/drive/MyDrive/ZomboidSaves/playitgg"
-PLAYIT_CONFIG = "/root/.config/playit_gg"
-
-if not os.path.exists("/content/drive"):
-    print("❌ Google Drive NO está montado. Ejecuta primero la Celda 1.")
-else:
-    # Matar instancias anteriores
-    !pkill -f playit 2>/dev/null
-
-    # Crear carpeta persistente
-    os.makedirs(PLAYIT_DRIVE, exist_ok=True)
-
-    # Si no existe config local, enlazar Drive
-    if os.path.exists(PLAYIT_CONFIG):
-        !rm -rf {PLAYIT_CONFIG}
-
-    !ln -s {PLAYIT_DRIVE} {PLAYIT_CONFIG}
-
-    print("✅ Configuración persistente enlazada.")
-
-    ya_configurado = any(os.scandir(PLAYIT_DRIVE)) if os.path.isdir(PLAYIT_DRIVE) else False
-    if ya_configurado:
-        print("ℹ️ Ya existe un túnel configurado en Drive. Esta celda es OPCIONAL en re-ejecuciones;")
-        print("   úsala solo si necesitas reclamar un túnel nuevo.")
-
-    print("🚀 Iniciando Playit...")
-    print("⚠️ SOLO la primera vez tendrás que reclamar el túnel.")
-    print("=" * 50)
-
-    !playit
-''')
-
-CELDA_3 = code("cell-iniciar", '''# @title 3. Iniciar Servidor (Watchdog + Config Avanzada)
+CELDA_3 = code("cell-iniciar", '''# @title 2. Iniciar Servidor + Túnel Playit + Consola (Auto-Apagado)
 # @markdown ---
 # @markdown ### 🎮 Parámetros del Servidor
 server_name = 'PzColab' # @param {type: "string"}
@@ -359,10 +320,38 @@ try:
 except Exception:
     pass
 
-# --- 2. PLAYIT EN SEGUNDO PLANO ---
-os.system("pkill -f playit 2>/dev/null")
-os.system("nohup playit > /tmp/playit.log 2>&1 &")
-print("✅ Túnel Playit encendido en el fondo.")
+# --- 2. PLAYIT TÚNEL (reclamo inline primera vez / background después) ---
+PLAYIT_DRIVE = f"{SAVES_PATH}/playitgg"
+PLAYIT_CONFIG = "/root/.config/playit_gg"
+playit_proc = None  # global del kernel, persiste entre re-ejecuciones
+try:
+    playit_proc = globals().get("playit_proc")
+except Exception:
+    pass
+
+os.system("pkill -f 'playit' 2>/dev/null")
+
+# Enlazar persistencia de config a Drive
+if os.path.exists("/content/drive"):
+    os.makedirs(PLAYIT_DRIVE, exist_ok=True)
+    if os.path.isdir(PLAYIT_CONFIG) or os.path.islink(PLAYIT_CONFIG):
+        os.system("rm -rf " + PLAYIT_CONFIG)
+    os.system("ln -s " + PLAYIT_DRIVE + " " + PLAYIT_CONFIG)
+
+config_existe = os.path.isdir(PLAYIT_DRIVE) and any(os.scandir(PLAYIT_DRIVE)) if os.path.isdir(PLAYIT_DRIVE) else False
+if not config_existe:
+    # Primera vez: reclamo foreground del túnel (la celda se pausa)
+    print("🚀 Primera ejecución: reclama tu túnel Playit.gg en la ventana que se abre.")
+    print("⚠️ Autoriza el enlace y vuelve aquí. La celda se quedará esperando.")
+    print("=" * 50)
+    get_ipython().system("playit")
+    config_existe = os.path.isdir(PLAYIT_DRIVE) and any(os.scandir(PLAYIT_DRIVE)) if os.path.isdir(PLAYIT_DRIVE) else False
+
+if config_existe:
+    playit_proc = subprocess.Popen(["playit"], stdout=open("/tmp/playit.log", "a"), stderr=subprocess.STDOUT)
+    print("✅ Túnel Playit.gg en segundo plano (handle guardado):", playit_proc.pid)
+else:
+    print("⚠️ No se pudo reclamar el túnel de Playit.gg. El servidor funciona local pero no es accesible externamente.")
 
 # --- 3. APLICAR MEMORIA CONFIGURADA (parche Xms/Xmx en start-server.sh) ---
 START_SH = "/content/pzserver/start-server.sh"
@@ -431,64 +420,70 @@ def monitor():
 threading.Thread(target=monitor, daemon=True).start()
 
 print("🔥 Servidor arrancado en segundo plano.")
-print(f"📄 Consola en vivo: Celda 3.1 (tail de {LOG_PATH})")
-print("🛑 Apagado limpio: Celda 3.2")
+print("📄 Consola en vivo integrada abajo (⏹ para detener y apagar de forma limpia).")
 if watchdog_activo:
     print(f"🛡️ Watchdog activo: hasta {max_reinicios} reinicios automáticos.")
-''')
 
-CELDA_3_1 = code("cell-consola", '''# @title 3.1 Consola en Vivo del Servidor (tail)
-# @markdown _Ejecuta esta celda para ver la consola del servidor en tiempo real._
-# @markdown _Para detenerla, presiona el botón ⏹ (Interrumpir ejecución)._
-
-import os
-
-LOG_PATH = "/tmp/pzserver.log"
-
-if not os.path.exists(LOG_PATH):
-    print("⚠️ Todavía no hay log. Ejecuta primero la Celda 3.")
-else:
-    print("📄 Mostrando últimas 40 líneas + seguimiento en vivo (⏹ para salir)...\\n")
-    get_ipython().system(f"tail -n 40 -f {LOG_PATH}")
-''')
-
-CELDA_3_2 = code("cell-apagar", '''# @title 3.2 Apagado Limpio del Servidor
-# @markdown _Guarda el mundo (save) y apaga el servidor de forma ordenada._
-
-import os
-import time
-import subprocess
-
+# --- 5. CONSOLA EN VIVO + APAGADO LIMPIO (flujo unificado) ---
+# El tail se consume con subprocess para que el ⏹ de Colab dispare KeyboardInterrupt
+# y entre en el bloque finally => save() -> quit() automático al terminar.
+tail_proc = None
 try:
-    pz_proc
-except NameError:
-    pz_proc = None
-try:
-    parada
-except NameError:
-    parada = None
-
-if pz_proc and pz_proc.poll() is None and pz_proc.stdin:
-    if parada:
+    print(f"📖 Streaming de {LOG_PATH} — pulsa ⏹ para detener y apagar de forma limpia.")
+    if os.path.exists(LOG_PATH):
+        tail_proc = subprocess.Popen(["tail", "-n", "40", "-f", LOG_PATH],
+                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        for linea in tail_proc.stdout:
+            print(linea, end="", flush=True)
+    else:
+        print("⚠️ Aún no hay log. El streaming empezará en cuanto arranque el servidor.")
+        time.sleep(20)
+except KeyboardInterrupt:
+    print("\\n🛑 Interrupción manual detectada: iniciando apagado limpio...")
+except Exception as e:
+    print(f"\\n⚠️ Error en el tail: {e}")
+finally:
+    if tail_proc and tail_proc.poll() is None:
+        tail_proc.terminate()
+        try:
+            tail_proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            tail_proc.kill()
+    # Apagado ordenado del servidor: save -> quit
+    if parada is not None:
         parada.set()
-    print("💾 Enviando SAVE...")
-    pz_proc.stdin.write("save\\n")
-    pz_proc.stdin.flush()
-    time.sleep(15)
-    print("🛑 Enviando QUIT...")
-    pz_proc.stdin.write("quit\\n")
-    pz_proc.stdin.flush()
-    try:
-        pz_proc.wait(timeout=90)
-        print("✅ Servidor apagado de forma segura.")
-    except subprocess.TimeoutExpired:
-        print("⚠️ No respondió a tiempo; forzando cierre.")
-        pz_proc.terminate()
-else:
-    print("⚠️ El proceso del servidor no está accesible en esta sesión (runtime reiniciado?).")
-    print("   Intentando pkill suave...")
-    os.system("pkill -TERM -f ProjectZomboid64 2>/dev/null; sleep 10; pkill -KILL -f ProjectZomboid64 2>/dev/null")
-    print("✅ Señales de terminación enviadas.")
+    if pz_proc and pz_proc.poll() is None and pz_proc.stdin:
+        print("💾 Enviando SAVE...")
+        try:
+            pz_proc.stdin.write("save\\n")
+            pz_proc.stdin.flush()
+        except Exception:
+            pass
+        time.sleep(15)
+        print("🛑 Enviando QUIT...")
+        try:
+            pz_proc.stdin.write("quit\\n")
+            pz_proc.stdin.flush()
+        except Exception:
+            pass
+        try:
+            pz_proc.wait(timeout=90)
+            print("✅ Servidor apagado de forma segura.")
+        except subprocess.TimeoutExpired:
+            print("⚠️ No respondió a tiempo; forzando cierre.")
+            pz_proc.terminate()
+    else:
+        os.system("pkill -TERM -f ProjectZomboid64 2>/dev/null; sleep 10; pkill -KILL -f ProjectZomboid64 2>/dev/null")
+        print("✅ Señales de terminación enviadas.")
+    if playit_proc and playit_proc.poll() is None:
+        playit_proc.terminate()
+        try:
+            playit_proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            playit_proc.kill()
+    if logf and not logf.closed:
+        logf.close()
+    print("🎯 Cierre completo: servidor guardado y túnel detenido.")
 ''')
 
 ANTI_AFK = md('''🛠️ Script Anti-Abandono para el Navegador
@@ -1053,10 +1048,7 @@ cells = [
     BADGE,
     INDICE,
     CELDA_1,
-    CELDA_2,
     CELDA_3,
-    CELDA_3_1,
-    CELDA_3_2,
     CELDA_4,
     CELDA_4_1,
     CELDA_5,
