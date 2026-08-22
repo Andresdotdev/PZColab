@@ -161,6 +161,42 @@ TRADUCCIONES = [
         '"\\n⚠️ SteamCMD falló al validar el ejecutable. Intenta correr la celda de nuevo."',
         '"\\n⚠️ SteamCMD failed to validate the executable. Try running the cell again."',
     ),
+    (
+        'f"⚠️ SteamCMD salió con código {rc} (rate-limit o red)."',
+        'f"⚠️ SteamCMD exited with code {rc} (rate-limit or network)."',
+    ),
+    (
+        '"\\n🔄 Reintento de descarga {intento}/{max_intentos} (limpiando estado previo)..."',
+        '"\\n🔄 Download retry {intento}/{max_intentos} (cleaning previous state)..."',
+    ),
+    (
+        '"\\n⚠️ Descarga interrumpida (posible pausa de inactividad de Colab)."',
+        '"\\n⚠️ Download interrupted (possible Colab idle pause)."',
+    ),
+    (
+        '"\\n⚠️ Falló la descarga después de {max_intentos} intentos."',
+        '"\\n⚠️ Download failed after {max_intentos} attempts."',
+    ),
+    (
+        '"💡 Solución: Reinicia el runtime de Colab (Desconectar y Reconectar) y vuelve a ejecutar esta celda."',
+        '"💡 Fix: Restart the Colab runtime (Disconnect and reconnect) and re-run this cell."',
+    ),
+    (
+        '"\\n🔎 Validando integridad de archivos con SteamCMD (puede tardar un par de minutos)..."',
+        '"\\n🔎 Validating file integrity via SteamCMD (may take a couple of minutes)..."',
+    ),
+    (
+        'f"⚠️ Validación falló (código {vproc.returncode})."',
+        'f"⚠️ Validation failed (code {vproc.returncode})."',
+    ),
+    (
+        'f"⚠️ No se pudo validar integridad: {e}"',
+        'f"⚠️ Could not validate integrity: {e}"',
+    ),
+    (
+        'f"⚠️ Error en SteamCMD en el intento {intento}: {e}"',
+        'f"⚠️ SteamCMD error on attempt {intento}: {e}"',
+    ),
     # --- Variables de parámetros (labels del formulario) ---
     ("pausa_cuando_vacio", "pause_when_empty"),
     ("watchdog_activo", "watchdog_enabled"),

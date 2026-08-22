@@ -141,25 +141,73 @@ else:
         os.system("pkill -f ProjectZomboid64 2>/dev/null")
         time.sleep(3)
 
-    os.makedirs(SERVER_PATH, exist_ok=True)
-    cmd = ['/usr/games/steamcmd', '+force_install_dir', SERVER_PATH, '+login', 'anonymous', '+app_update', '380870'] + beta_args(Version) + ['+quit']
+    cmd_base = ['/usr/games/steamcmd', '+force_install_dir', SERVER_PATH, '+login', 'anonymous', '+app_update', '380870']
+    cmd = cmd_base + beta_args(Version) + ['+quit']
 
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    progreso = {}
-    for line in process.stdout:
-        line_lower = line.lower()
-        match = re.search(r'(?:stage|update state)\\s+\\(([^)]+)\\)\\s+([a-zA-Z]+),\\s+progress:\\s+([0-9.]+)', line_lower)
-        if match:
-            state = match.group(2).capitalize()
+    # Intento de descarga con retry: Colab free puede interrumpir por inactividad (~15 min sin output)
+    # o rate-limits de Steam. Reintentamos limpiando pzserver.
+    intento = 0
+    max_intentos = 3
+    ok_descarga = False
+    while intento < max_intentos and not ok_descarga:
+        intento += 1
+        # Limpiar parciales del intento anterior
+        os.system("rm -rf " + SERVER_PATH + " 2>/dev/null")
+        os.makedirs(SERVER_PATH, exist_ok=True)
+        if intento > 1:
+            print(f"\\n🔄 Reintento de descarga {intento}/{max_intentos} (limpiando estado previo)...")
+            time.sleep(5)
+
+        try:
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            progreso = {}
             try:
-                percent = float(match.group(3))
-            except ValueError:
-                percent = 0.0
-            if percent > 100.0:
-                percent = 100.0
-            progreso[state] = percent
-            mostrar_panel(3, progreso)
-    process.wait()
+                for line in process.stdout:
+                    line_lower = line.lower()
+                    match = re.search(r'(?:stage|update state)\\s+\\(([^)]+)\\)\\s+([a-zA-Z]+),\\s+progress:\\s+([0-9.]+)', line_lower)
+                    if match:
+                        state = match.group(2).capitalize()
+                        try:
+                            percent = float(match.group(3))
+                        except ValueError:
+                            percent = 0.0
+                        if percent > 100.0:
+                            percent = 100.0
+                        progreso[state] = percent
+                        mostrar_panel(3, progreso)
+            except KeyboardInterrupt:
+                # Colab interrumpió: matar el proceso y reintentar
+                print("\\n⚠️ Descarga interrumpida (posible pausa de inactividad de Colab).")
+                try:
+                    process.terminate()
+                    process.wait(timeout=30)
+                except Exception:
+                    pass
+                continue
+            rc = process.wait()
+            if rc != 0:
+                print(f"⚠️ SteamCMD salió con código {rc} (rate-limit o red).")
+                continue
+            ok_descarga = True
+        except Exception as e:
+            print(f"⚠️ Error en SteamCMD en el intento {intento}: {e}")
+            continue
+
+    if not ok_descarga:
+        print(f"\\n⚠️ Falló la descarga después de {max_intentos} intentos.")
+        print("💡 Solución: Reinicia el runtime de Colab (Desconectar y Reconectar) y vuelve a ejecutar esta celda.")
+
+# --- 4.1 VALIDAR INTEGRIDAD (si falta el ejecutable, validar vía SteamCMD) ---
+if ok_descarga and not os.path.exists(f"{SERVER_PATH}/ProjectZomboid64"):
+    print("\\n🔎 Validando integridad de archivos con SteamCMD (puede tardar un par de minutos)...")
+    cmd_validate = ['/usr/games/steamcmd', '+force_install_dir', SERVER_PATH, '+login', 'anonymous', '+app_update', '380870', 'validate', '+quit']
+    try:
+        vproc = subprocess.run(cmd_validate, capture_output=True, text=True, timeout=600)
+        mostrar_panel(3)
+        if vproc.returncode != 0:
+            print(f"⚠️ Validación falló (código {vproc.returncode}).")
+    except Exception as e:
+        print(f"⚠️ No se pudo validar integridad: {e}")
 
 # --- 5. PARCHAR MEMORIA (Colab tiene ~12.7 GB de RAM) ---
 START_SH = f"{SERVER_PATH}/start-server.sh"
