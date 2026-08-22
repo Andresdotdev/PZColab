@@ -203,6 +203,7 @@ TRADUCCIONES = [
     ("max_reinicios", "max_restarts"),
     ("Limpiar_Lista_Anterior", "clear_previous_list"),
     ("Descargar_Mods", "download_mods"),
+    ("Descargar_Dependencias", "resolve_dependencies"),
     ("Backup_Max_Guardar", "backup_max_keep"),
     ("memoria_gb", "memory_gb"),
     (
@@ -305,8 +306,17 @@ TRADUCCIONES = [
     ),
     ("# @markdown ### 📥 Descargar Mods del Workshop", "# @markdown ### 📥 Download Workshop Mods"),
     (
-        "# @markdown _💡 Descarga cada item vía SteamCMD y detecta el Mod ID real leyendo su `mod.info`._",
         "# @markdown _💡 Downloads each item via SteamCMD and detects the real Mod ID from its `mod.info`._",
+        "# @markdown _💡 Downloads each item via SteamCMD and detects the real Mod ID from its `mod.info`._",
+    ),
+    ("# @title 4. Mods Fáciles: Pega URLs o Colecciones", "# @title 3. Easy Mods: Paste URLs or Collections"),
+    (
+        "# @markdown ### 📦 Resolver Dependencias (require=)",
+        "# @markdown ### 📦 Resolve Dependencies (require=)",
+    ),
+    (
+        "# @markdown _💡 If a mod requires another (require= in `mod.info`) and it's missing, it's searched on Workshop and downloaded automatically (max 3 passes, cache per session). Unresolved ones are reported for manual adding._",
+        "# @markdown _💡 If a mod requires another (require= in `mod.info`) and it's missing, it's searched on Workshop and downloaded automatically (max 3 passes, cache per session). Unresolved ones are reported for manual adding._",
     ),
     (
         "**▶️ Para confirmar: ejecuta esta celda con el botón ▶ (o Ctrl+Enter). Los campos del formulario se procesan al ejecutar la celda — no hay un botón interno.**",
@@ -338,6 +348,22 @@ TRADUCCIONES = [
     (
         'f"   El mod \'{mid}\' requiere \'{req}\', que no está en la lista. Agrégalo o el servidor puede no cargar."',
         'f"   Mod \'{mid}\' requires \'{req}\', which is not in the list. Add it or the server may fail to load."',
+    ),
+    (
+        '"\\n🔎 Resolviendo dependencias faltantes vía Workshop (máx. 3 pasos)..."',
+        '"\\n🔎 Resolving missing dependencies via Workshop (max 3 passes)..."',
+    ),
+    (
+        'f"   🔗 {req} -> Workshop {wsid} (descargando, paso {pasada})..."',
+        'f"   🔗 {req} -> Workshop {wsid} (downloading, step {pasada})..."',
+    ),
+    (
+        'f"   ⚠️ Falló la descarga de {req} (Workshop {wsid})."',
+        'f"   ⚠️ Failed to download {req} (Workshop {wsid})."',
+    ),
+    (
+        'f"   ⚠️ \'{req}\' no encontrado en Workshop. Agrégalo manualmente si existe."',
+        'f"   ⚠️ \'{req}\' not found on Workshop. Add it manually if it exists."',
     ),
     (
         '"🔎 POSIBLES INCOMPATIBILIDADES DE VERSIÓN (heurístico, verifica en el Workshop):"',

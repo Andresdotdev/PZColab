@@ -66,6 +66,9 @@ os.makedirs(item_g)
 with open(os.path.join(item_g, "mod.info"), "w", encoding="utf-8") as f:
     f.write("id=gmod\nname=G Mod\nrequire=otromod\n")
 
+# NOTA: item 556679 (otromod) NO se crea aquí; el fake_subprocess_run lo crea
+# al simular la descarga via steamcmd, para testear la auto-descarga de deps.
+
 INI = os.path.join(saves, "Server", "PzColab.ini")
 os.makedirs(os.path.dirname(INI), exist_ok=True)
 with open(INI, "w") as f:
@@ -83,6 +86,9 @@ def fake_requests_get(url, headers=None, timeout=None):
     elif "id=556677" in url:
         r.status_code = 200
         r.text = '<div class="workshopItemTitle">Cool Mod</div><div class="workshopItemDescription">This mod requires Build 42!</div>'
+    elif "searchText=otromod" in url or "search_text=otromod" in url:
+        r.status_code = 200
+        r.text = '<div class="collectionChildren"></div><a href="https://steamcommunity.com/sharedfiles/filedetails/?id=556679">Otro Mod</a>'
     else:
         r.status_code = 200
         r.text = "<html>normal mod page</html>"
@@ -99,6 +105,12 @@ def fake_subprocess_run(cmd, **kwargs):
     os.makedirs(carpeta, exist_ok=True)
     with open(os.path.join(carpeta, ".downloaded"), "w") as f:
         f.write("ok")
+    # Simular contenido del workshop item 556679 (otromod) al ser descargado
+    if wsid == "556679":
+        sub = os.path.join(carpeta, "mods", "otromod")
+        os.makedirs(sub, exist_ok=True)
+        with open(os.path.join(sub, "mod.info"), "w", encoding="utf-8") as f:
+            f.write("id=otromod\nname=Otro Mod\n")
     return types.SimpleNamespace(returncode=0)
 
 fake_subprocess = types.ModuleType("subprocess")
@@ -108,21 +120,23 @@ sys.modules["subprocess"] = fake_subprocess
 
 # --- Preparar el código de la celda para inyectar parámetros de test ---
 code = src.replace('mods_input = ""', "mods_input = _INPUT")
-vars_params = (["Limpiar_Lista_Anterior", "Descargar_Mods"] if ES else ["clear_previous_list", "download_mods"])
+vars_params = (["Limpiar_Lista_Anterior", "Descargar_Mods", "Descargar_Dependencias"] if ES else ["clear_previous_list", "download_mods", "resolve_dependencies"])
 for var in vars_params:
-    code = code.replace(var, "_LIMP" if "clear" in var or "Limpiar" in var else "_DESC")
+    code = code.replace(var, "_LIMP" if "clear" in var or "Limpiar" in var else "_DESC" if "download" in var or "Descargar_Mods" in var else "_DEP")
 code = code.replace("_LIMP = False", "_LIMP = _LIMP")
 code = code.replace("_DESC = True", "_DESC = _DESC")
+code = code.replace("_DEP = True", "_DEP = _DEP")
 code = code.replace("'/content/drive/MyDrive/ZomboidSaves'", "r'" + saves.replace("\\", "/") + "'")
 code = code.replace("'/content/pzserver'", "r'" + server.replace("\\", "/") + "'")
 
 ns = {}
 
-def correr(input_, limpiar=False, descargar=True):
+def correr(input_, limpiar=False, descargar=True, deps=True):
     ns.clear()
     ns["_INPUT"] = input_
     ns["_LIMP"] = limpiar
     ns["_DESC"] = descargar
+    ns["_DEP"] = deps
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         exec(compile(code, "cell-mods", "exec"), ns)
@@ -210,10 +224,28 @@ assert ac("<html>Build 41 legacy</html>") == "conflicto b41"
 print("F2 OK: analizar_compatibilidad unitario (b41, b42, ambos, ninguno)")
 
 # ============ ESCENARIO G: dependencias requeridas (require= en mod.info) ============
+# G1: auto-descarga de la dependencia "otromod" (requerida por gmod) vía Workshop
+aviso_resolviendo = "Resolviendo dependencias" if ES else "Resolving missing dependencies"
 aviso_deps = "DEPENDENCIAS FALTANTES" if ES else "MISSING DEPENDENCIES"
-out = correr("556678")
-assert aviso_deps in out, f"sin aviso de dependencias:\n{out}"
+out = correr("556678", deps=True)
+assert aviso_resolviendo in out, f"sin reporte de resolucion de deps:\n{out}"
+assert "otromod -> Workshop 556679" in out, f"no resolvio otromod:\n{out}"
+ini = open(INI).read()
+assert "otromod" in ini.replace("\\", ""), f"otromod no fue agregado al ini:\n{ini}"
+assert aviso_deps not in out, f"no deberia haber faltantes tras auto-descarga:\n{out}"
+print("G1 OK: dependencia autodescargada desde Workshop y añadida al .ini (sin faltantes)")
+
+# G2: con Desccargar_Dependencias=False, la dependencia sale como faltante -> fallback a reporte
+# Reset de estado: borrar otromod del ini y del filesystem para simular "no descargado"
+with open(INI, "w") as f:
+    f.write("Port=16261\nWorkshopItems=556678;1111\nMods=\\gmod;\\oldmod\nPauseOnEmpty=true\n")
+import shutil
+dep_root = os.path.join(WS, "556679")
+if os.path.isdir(dep_root):
+    shutil.rmtree(dep_root)
+out = correr("556678", deps=False)
+assert aviso_deps in out, f"sin aviso de faltantes (modo deps=False):\n{out}"
 assert "otromod" in out, f"no menciona la dependencia faltante:\n{out}"
-print("G1 OK: dependencia requerida faltante detectada en el reporte")
+print("G2 OK: con deps=False, dependencia faltante reportada (fallback manual)")
 
 print("\n✅ TODOS LOS ESCENARIOS PASARON")

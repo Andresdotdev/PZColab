@@ -572,6 +572,10 @@ mods_input = "" # @param {type:"raw"}
 Descargar_Mods = True # @param {type:"boolean"}
 # @markdown _💡 Descarga cada item vía SteamCMD y detecta el Mod ID real leyendo su `mod.info`._
 # @markdown
+# @markdown ### 📦 Resolver Dependencias (require=)
+Descargar_Dependencias = True # @param {type:"boolean"}
+# @markdown _💡 Si un mod requiere otro (require= en `mod.info`) y falta de descargar, lo busca en Workshop y lo descarga automáticamente (3 pasos, cache por sesión). Los que no encuentre, se reportan para pegarlos manualmente._
+# @markdown
 # @markdown **▶️ Para confirmar: ejecuta esta celda con el botón ▶ (o Ctrl+Enter). Los campos del formulario se procesan al ejecutar la celda — no hay un botón interno.**
 
 import os, re, json, zipfile, subprocess
@@ -679,6 +683,41 @@ else:
             return f"la página menciona Build 41 pero tu servidor es {Version.upper()}"
         return None
 
+    # --- BÚSQUEDA DE WORKSHOP ID POR MOD ID (para resolver dependencias) ---
+    deps_cache = {}  # cache por sesión: ModID -> WSID
+
+    def buscar_wsid_por_modid(query):
+        if query in deps_cache:
+            return deps_cache[query]
+        wsid = None
+        if requests is not None:
+            try:
+                url = f"https://steamcommunity.com/workshop/search?searchText={query}&appid={WS_APP}"
+                r = requests.get(url, headers=HEADERS, timeout=20)
+                if r.status_code == 200:
+                    ids = re.findall(r'sharedfiles/filedetails/\\?id=(\\d+)', r.text)
+                    if ids:
+                        wsid = ids[0]
+            except Exception:
+                pass
+        deps_cache[query] = wsid
+        return wsid
+
+    def descargar_ws_item(wsid):
+        """Descarga un item del Workshop vía steamcmd. Devuelve True si la carpeta quedó con contenido."""
+        carpeta = f"{WS_BASE}/{wsid}"
+        if os.path.isdir(carpeta) and list(os.scandir(carpeta)):
+            return True
+        if not os.path.isdir(WS_BASE):
+            os.makedirs(WS_BASE, exist_ok=True)
+        cmd = ['/usr/games/steamcmd', '+force_install_dir', SERVER_PATH, '+login', 'anonymous',
+               '+workshop_download_item', WS_APP, wsid, '+quit']
+        try:
+            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=300)
+        except Exception:
+            pass
+        return os.path.isdir(carpeta) and list(os.scandir(carpeta))
+
     final = []
     vistos = set()
     def agregar(wsid, manual):
@@ -784,7 +823,7 @@ else:
 
     # --- 5. MERGE CON HISTORIAL DEL .ini (sin duplicados) ---
     if not os.path.exists(INI_PATH):
-        print("❌ ERROR: No se encontró el archivo INI. Inicia el servidor una vez (Celda 3) para generarlo.")
+        print("❌ ERROR: No se encontró el archivo INI. Inicia el servidor una vez (Celda 2) para generarlo.")
     else:
         with open(INI_PATH, 'r') as f:
             ini_lines = f.readlines()
@@ -853,15 +892,90 @@ else:
             print("-" * 60)
 
             faltantes = []
-            ids_configurados = {m[1] for m in combinada}
+            # Mod IDs disponibles en el filesystem (descargados previamente, aunque no estén en la lista)
+            ids_en_filesystem = set()
+            wsids_existentes = set()
+            if os.path.isdir(WS_BASE):
+                for wsid_dir in os.listdir(WS_BASE):
+                    wsids_existentes.add(wsid_dir)
+                    for mid, mname, requires in detectar(wsid_dir):
+                        ids_en_filesystem.add(mid)
+            ids_configurados = {m[1] for m in combinada} | ids_en_filesystem
             for mid, reqs in requerimientos.items():
                 for req in reqs:
                     if req not in ids_configurados:
                         faltantes.append((mid, req))
             if faltantes:
-                print("\\n⚠️ DEPENDENCIAS FALTANTES:")
-                for mid, req in faltantes:
-                    print(f"   El mod '{mid}' requiere '{req}', que no está en la lista. Agrégalo o el servidor puede no cargar.")
+                if Descargar_Dependencias and os.path.isdir(WS_BASE):
+                    print("\\n🔎 Resolviendo dependencias faltantes vía Workshop (máx. 3 pasos)...")
+                    pasada = 0
+                    while faltantes and pasada < 3:
+                        pasada += 1
+                        nuevos_wsids = []
+                        for mid, req in faltantes:
+                            wsid = buscar_wsid_por_modid(req)
+                            if wsid:
+                                # Si ya está descargado en el filesystem, no volver a descargar, solo enlazarlo
+                                if wsid in wsids_existentes:
+                                    print(f"   🔗 {req} -> Workshop {wsid} (ya descargado, se enlaza)")
+                                    if wsid not in vistos_ws:
+                                        nuevos_wsids.append(wsid)
+                                else:
+                                    print(f"   🔗 {req} -> Workshop {wsid} (descargando, paso {pasada})...")
+                                    if descargar_ws_item(wsid):
+                                        nuevos_wsids.append(wsid)
+                                        wsids_existentes.add(wsid)
+                                    else:
+                                        print(f"   ⚠️ Falló la descarga de {req} (Workshop {wsid}).")
+                            else:
+                                print(f"   ⚠️ '{req}' no encontrado en Workshop. Agrégalo manualmente si existe.")
+                        # Reanalizar las dependencias recién descargadas/enlazadas
+                        if nuevos_wsids:
+                            for wsid in nuevos_wsids:
+                                for mid2, mname2, requires2 in detectar(wsid):
+                                    nuevos.append((wsid, mid2, clasificar(mname2, mid2), mname2 or mid2))
+                                    if requires2:
+                                        requerimientos[mid2] = requires2
+                        # Rehacer merge con los mods nuevos + historial
+                        combinada = list(nuevos)
+                        vistos_ws = {m[0] for m in combinada}
+                        for b in base:
+                            if b[0] not in vistos_ws:
+                                vistos_ws.add(b[0])
+                                combinada.append(b)
+                        peso = {"lib": 0, "ui": 1, "car": 2, "qol": 3}
+                        combinada.sort(key=lambda m: peso.get(m[2], 3))
+                        # Reescribir .ini con la combinada actualizada
+                        ws_ids = [m[0] for m in combinada]
+                        mod_ids = [m[1] for m in combinada]
+                        workshop_str = f"WorkshopItems={';'.join(ws_ids)}\\n"
+                        mod_str = f"Mods={';'.join([f'\\\\{m}' if is_b42 else m for m in mod_ids])}\\n"
+                        ws_found, mod_found = False, False
+                        for idx, line in enumerate(ini_lines):
+                            if line.startswith("WorkshopItems="):
+                                ini_lines[idx] = workshop_str; ws_found = True
+                            elif line.startswith("Mods="):
+                                ini_lines[idx] = mod_str; mod_found = True
+                        if not ws_found:
+                            ini_lines.append(workshop_str)
+                        if not mod_found:
+                            ini_lines.append(mod_str)
+                        with open(INI_PATH, 'w') as f:
+                            f.writelines(ini_lines)
+                        # Reevaluar faltantes (ya descargados pasan a ids_en_filesystem)
+                        for wsid in nuevos_wsids:
+                            for mid, mname, requires in detectar(wsid):
+                                ids_en_filesystem.add(mid)
+                        ids_configurados = {m[1] for m in combinada} | ids_en_filesystem
+                        faltantes = []
+                        for mid, reqs in requerimientos.items():
+                            for req in reqs:
+                                if req not in ids_configurados:
+                                    faltantes.append((mid, req))
+                if faltantes:
+                    print("\\n⚠️ DEPENDENCIAS FALTANTES:")
+                    for mid, req in faltantes:
+                        print(f"   El mod '{mid}' requiere '{req}', que no está en la lista. Agrégalo o el servidor puede no cargar.")
 
             if avisos_compat:
                 print("\\n🔎 POSIBLES INCOMPATIBILIDADES DE VERSIÓN (heurístico, verifica en el Workshop):")
@@ -870,7 +984,7 @@ else:
                 print("   Si el mod no carga, revisa su página para confirmar compatibilidad.")
 
             print(f"✅ .ini actualizado: {INI_PATH}")
-            print("   Reinicia el servidor (Celda 3) para aplicar los mods.")
+            print("   Reinicia el servidor (Celda 2) para aplicar los mods.")
 ''')
 
 
