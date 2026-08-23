@@ -318,6 +318,37 @@ TRADUCCIONES = [
         "# @markdown _💡 If a mod requires another (require= in `mod.info`) and it's missing, it's searched on Workshop and downloaded automatically (max 3 passes, cache per session). Unresolved ones are reported for manual adding._",
         "# @markdown _💡 If a mod requires another (require= in `mod.info`) and it's missing, it's searched on Workshop and downloaded automatically (max 3 passes, cache per session). Unresolved ones are reported for manual adding._",
     ),
+    ("Eliminar_Mods", "manage_mods"),
+    ("numero_a_eliminar", "number_to_remove"),
+    (
+        "# @markdown ### 🗑️ Gestión rápida de mods",
+        "# @markdown ### 🗑️ Quick Mod Management",
+    ),
+    (
+        "# @markdown _💡 Activa para listar tus mods y eliminar uno por número o WSID sin tocar el .ini a mano._",
+        "# @markdown _💡 Enable to list your mods and remove one by number or WSID without touching the .ini._",
+    ),
+    (
+        "# @markdown _📌 Al activar Eliminar_Mods, corre la celda → aparecerá el listado → pega el número o WSID a eliminar._",
+        "# @markdown _📌 With manage_mods on, run the cell → a list appears → paste the number or WSID to remove._",
+    ),
+    (
+        '"🗑️ MODS ACTIVOS (usa el número o el WSID para eliminar):"',
+        '"🗑️ ACTIVE MODS (use the number or WSID to remove):"',
+    ),
+    (
+        'f"🗑️  Elimando: {nombre_por_wsid.get(borrado, borrado)} (WSID: {borrado})"',
+        'f"🗑️  Removing: {nombre_por_wsid.get(borrado, borrado)} (WSID: {borrado})"',
+    ),
+    (
+        'f"✅ {borrado} eliminado del .ini. Reinicia el servidor (Celda 2)."',
+        'f"✅ {borrado} removed from .ini. Restart the server (Cell 2)."',
+    ),
+    ('"⚠️ Número o WSID inválido. Revisa la lista y vuelve a intentarlo."', '"⚠️ Invalid number or WSID. Check the list and try again."'),
+    (
+        '"   Reinicia el servidor (Celda 2) para aplicar los mods."',
+        '"   Restart the server (Cell 2) to apply the mods."',
+    ),
     (
         "**▶️ Para confirmar: ejecuta esta celda con el botón ▶ (o Ctrl+Enter). Los campos del formulario se procesan al ejecutar la celda — no hay un botón interno.**",
         "**▶️ To confirm: run this cell with the ▶ button (or Ctrl+Enter). Form fields are processed when the cell runs — there is no internal button.**",
@@ -533,11 +564,36 @@ TRADUCCIONES = [
         '"📦 Creating backup (may take a few minutes depending on world size)..."',
     ),
     ('f"✅ Backup creado: {destino} ({tamaño_mb:.1f} MB)"', 'f"✅ Backup created: {destino} ({tamaño_mb:.1f} MB)"'),
+      (
+        'f"⚠️ Auto-backup falló: {e}"',
+        'f"⚠️ Auto-backup failed: {e}"',
+    ),
     (
         'f"📊 Backups conservados: {len(backups)} (máximo {max_guardar})"',
         'f"📊 Backups kept: {len(backups)} (max {max_guardar})"',
     ),
+    (
+        'f"   🔗 {req} -> Workshop {wsid} (ya descargado, se enlaza)"',
+        'f"   🔗 {req} -> Workshop {wsid} (already downloaded, linking)"',
+    ),
     ('f"📂 Carpeta de backups: {BACKUP_DIR}"', 'f"📂 Backup folder: {BACKUP_DIR}"'),
+    ('"📭 No hay backups disponibles para restaurar."', '"📭 No backups available to restore."'),
+    ('"📋 Backups disponibles (más reciente primero):"', '"📋 Available backups (newest first):"'),
+    (
+        'f"⚠️  RESTAURACIÓN: {os.path.basename(eleccion)} reemplazará tu save actual."',
+        'f"⚠️  RESTORE: {os.path.basename(eleccion)} will replace your current save."',
+    ),
+    (
+        'f"   Se guarda un backup de seguridad en: {os.path.basename(respaldo_previo)}"',
+        'f"   Safety backup saved at: {os.path.basename(respaldo_previo)}"',
+    ),
+    # Nota: respaldo_previo se traduce dentro del f-string (variable), sólo el literal
+    ('"   Se guarda un backup de seguridad en: "', '"   Safety backup saved at: "'),
+    (
+        'f"✅ Restore completado: {os.path.basename(eleccion)} → {SAVES_PATH}"',
+        'f"✅ Restore completed: {os.path.basename(eleccion)} → {SAVES_PATH}"',
+    ),
+    ('"   Reinicia el servidor (Celda 2) para aplicar."', '"   Restart the server (Cell 2) to apply."'),
 ]
 
 # Aplicar las más largas primero para evitar colisiones parciales

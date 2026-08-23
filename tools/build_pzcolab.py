@@ -259,6 +259,9 @@ memoria_gb = "6 GB" # @param ["4 GB", "6 GB", "8 GB"]
 # @markdown ### 🛡️ Watchdog (auto-reinicio ante crashes)
 watchdog_activo = True # @param {type: "boolean"}
 max_reinicios = 3 # @param {type: "integer"}
+# @markdown ### 💾 Backup automático al apagar
+Auto_Backup = True # @param {type: "boolean"}
+# @markdown _💡 Al detener la celda (⏹), guarda un .tar.gz de tu mundo en Drive antes de apagar._
 
 import os
 import re
@@ -531,6 +534,40 @@ finally:
             playit_proc.kill()
     if logf and not logf.closed:
         logf.close()
+    # --- Auto-backup al apagar (antes del save final) ---
+    try:
+        if Auto_Backup and os.path.isdir(SAVES_PATH):
+            import tarfile, time, glob as _glob
+            BACKUP_DIR = f"{SAVES_PATH}_backups"
+            os.makedirs(BACKUP_DIR, exist_ok=True)
+            # Rotar logs: conservar sólo los 20 archivos más recientes en Logs/, borrar el resto
+            LOGS_DIR = os.path.join(SAVES_PATH, "Logs")
+            if os.path.isdir(LOGS_DIR):
+                logs = sorted(_glob.glob(os.path.join(LOGS_DIR, "*")), key=os.path.getmtime)
+                for viejo in logs[:-20]:
+                    try:
+                        os.remove(viejo)
+                    except Exception:
+                        pass
+            ts = time.strftime("%Y%m%d_%H%M%S")
+            destino = f"{BACKUP_DIR}/ZomboidSaves_{ts}_{int(time.time() * 1000) % 100000:05d}.tar.gz"
+            # Excluir Logs/ (ya rotados) y el propio backups dir del tar.gz
+            def _tar_filter(ti):
+                if ti.name.startswith("ZomboidSaves/Logs"):
+                    return None
+                return ti
+            with tarfile.open(destino, "w:gz") as tar:
+                tar.add(SAVES_PATH, arcname="ZomboidSaves", recursive=True, filter=_tar_filter)
+            # Retención: mantener sólo los 3 backups más recientes
+            backups = sorted(_glob.glob(f"{BACKUP_DIR}/ZomboidSaves_*.tar.gz"), key=os.path.getmtime)
+            for viejo in backups[:-3]:
+                try:
+                    os.remove(viejo)
+                except Exception:
+                    pass
+            print(f"💾 Auto-backup creado: {destino}")
+    except Exception as e:
+        print(f"⚠️ Auto-backup falló: {e}")
     print("🎯 Cierre completo: servidor guardado y túnel detenido.")
 ''')
 
@@ -575,6 +612,12 @@ Descargar_Mods = True # @param {type:"boolean"}
 # @markdown ### 📦 Resolver Dependencias (require=)
 Descargar_Dependencias = True # @param {type:"boolean"}
 # @markdown _💡 Si un mod requiere otro (require= en `mod.info`) y falta de descargar, lo busca en Workshop y lo descarga automáticamente (3 pasos, cache por sesión). Los que no encuentre, se reportan para pegarlos manualmente._
+# @markdown
+# @markdown ### 🗑️ Gestión rápida de mods
+Eliminar_Mods = False # @param {type:"boolean"}
+# @markdown _💡 Activa para listar tus mods y eliminar uno por número o WSID sin tocar el .ini a mano._
+numero_a_eliminar = "" # @param {type:"string"}
+# @markdown _📌 Al activar Eliminar_Mods, corre la celda → aparecerá el listado → pega el número o WSID a eliminar._
 # @markdown
 # @markdown **▶️ Para confirmar: ejecuta esta celda con el botón ▶ (o Ctrl+Enter). Los campos del formulario se procesan al ejecutar la celda — no hay un botón interno.**
 
@@ -985,6 +1028,87 @@ else:
 
             print(f"✅ .ini actualizado: {INI_PATH}")
             print("   Reinicia el servidor (Celda 2) para aplicar los mods.")
+
+# --- 7. GESTIÓN RÁPIDA: ELIMINAR MODS (independiente de pegar mods) ---
+if Eliminar_Mods and os.path.exists(INI_PATH):
+    def _parse_mod_info(txt):
+        mid = mname = None
+        for line in txt.splitlines():
+            line = line.strip()
+            if line.startswith("id="):
+                mid = line.partition("=")[2].strip()
+            elif line.startswith("name="):
+                mname = line.partition("=")[2].strip()
+        return (mid, mname)
+
+    def _detectar_mods(wsid):
+        res = []
+        base = f"{WS_BASE}/{wsid}"
+        if os.path.isdir(base):
+            for root, dirs, files in os.walk(base):
+                for fn in files:
+                    if fn == "mod.info":
+                        try:
+                            with open(os.path.join(root, fn), encoding="utf-8", errors="ignore") as f:
+                                mid, mname = _parse_mod_info(f.read())
+                                if mid:
+                                    res.append((mid, mname))
+                        except Exception:
+                            pass
+                    elif fn.lower().endswith(".zip"):
+                        try:
+                            with zipfile.ZipFile(os.path.join(root, fn)) as z:
+                                for nombre in z.namelist():
+                                    if nombre.endswith("mod.info"):
+                                        mid, mname = _parse_mod_info(z.read(nombre).decode("utf-8", errors="ignore"))
+                                        if mid:
+                                            res.append((mid, mname))
+                        except Exception:
+                            pass
+        return res
+
+    with open(INI_PATH, 'r') as f:
+        ini_lines2 = f.readlines()
+    ini2 = "".join(ini_lines2)
+    ws_m = re.search(r'^WorkshopItems=(.*)', ini2, re.MULTILINE)
+    mod_m = re.search(r'^Mods=(.*)', ini2, re.MULTILINE)
+    ws_list2 = [x.strip() for x in ws_m.group(1).split(';') if x.strip()] if ws_m and ws_m.group(1).strip() else []
+    mod_list2 = [x.strip().replace('\\\\', '') for x in mod_m.group(1).split(';') if x.strip()] if mod_m and mod_m.group(1).strip() else []
+    nombre_por_wsid = {}
+    for wsid in ws_list2:
+        for mid, mname in _detectar_mods(wsid):
+            nombre_por_wsid[wsid] = (mname or mid)
+    print("-" * 60)
+    print("🗑️ MODS ACTIVOS (usa el número o el WSID para eliminar):")
+    print("-" * 60)
+    for i, wsid in enumerate(ws_list2):
+        nom = nombre_por_wsid.get(wsid, mod_list2[i] if i < len(mod_list2) else wsid)
+        print(f"  [{i}] 📦 {nom} | Workshop: {wsid}")
+    print("-" * 60)
+    blanco = numero_a_eliminar.strip()
+    if blanco:
+        indice_a_borrar = None
+        if blanco.isdigit() and int(blanco) < len(ws_list2):
+            indice_a_borrar = int(blanco)
+        elif blanco in ws_list2:
+            indice_a_borrar = ws_list2.index(blanco)
+        if indice_a_borrar is not None:
+            borrado = ws_list2.pop(indice_a_borrar)
+            if indice_a_borrar < len(mod_list2):
+                mod_list2.pop(indice_a_borrar)
+            print(f"🗑️  Elimando: {nombre_por_wsid.get(borrado, borrado)} (WSID: {borrado})")
+            nuevo_ws = ';'.join(ws_list2)
+            nuevo_mod = ';'.join([f'\\\\{m}' if is_b42 else m for m in mod_list2])
+            for idx, line in enumerate(ini_lines2):
+                if line.startswith("WorkshopItems="):
+                    ini_lines2[idx] = f"WorkshopItems={nuevo_ws}\\n"
+                elif line.startswith("Mods="):
+                    ini_lines2[idx] = f"Mods={nuevo_mod}\\n"
+            with open(INI_PATH, 'w') as f:
+                f.writelines(ini_lines2)
+            print(f"✅ {borrado} eliminado del .ini. Reinicia el servidor (Celda 2).")
+        else:
+            print("⚠️ Número o WSID inválido. Revisa la lista y vuelve a intentarlo.")
 ''')
 
 
@@ -1180,30 +1304,78 @@ print("=========================================================")
 CELDA_5 = code("cell-backup", '''# @title 5. Backup de Saves (Drive)
 # @markdown _Crea un respaldo .tar.gz del mundo y la configuración en tu Google Drive._
 Backup_Max_Guardar = 3 # @param {type: "integer"}
+# @markdown _💡 Retención: se conservan los últimos N backups._
+# @markdown
+# @markdown ### ♻️ Restaurar un backup
+Restaurar_Backup = False # @param {type: "boolean"}
+# @markdown _💡 Activa para listar tus backups y restaurar uno (reemplaza tu save actual)._
+numero_backup = 0 # @param {type: "integer"}
+# @markdown _📌 Usa el número que aparece al listar (0 = más reciente, 1 = anterior...)._
 
 import os, glob, time, tarfile
 
 SAVES_PATH = "/content/drive/MyDrive/ZomboidSaves"
 BACKUP_DIR = "/content/drive/MyDrive/ZomboidSaves_backups"
 
+def _rotar_logs():
+    """Conservar sólo los 20 logs más recientes, borrar el resto."""
+    LOGS_DIR = os.path.join(SAVES_PATH, "Logs")
+    if os.path.isdir(LOGS_DIR):
+        logs = sorted(glob.glob(os.path.join(LOGS_DIR, "*")), key=os.path.getmtime)
+        for viejo in logs[:-20]:
+            try:
+                os.remove(viejo)
+            except Exception:
+                pass
+
+def _tar_filter(ti):
+    if ti.name.startswith("ZomboidSaves/Logs"):
+        return None
+    return ti
+
 if not os.path.exists("/content/drive"):
     print("❌ Drive no montado. Ejecuta primero la Celda 1.")
 else:
     os.makedirs(BACKUP_DIR, exist_ok=True)
-    ts = time.strftime("%Y%m%d_%H%M%S")
-    destino = f"{BACKUP_DIR}/ZomboidSaves_{ts}.tar.gz"
-    print("📦 Creando backup (según el tamaño del mundo puede tardar unos minutos)...")
-    with tarfile.open(destino, "w:gz") as tar:
-        tar.add(SAVES_PATH, arcname="ZomboidSaves", recursive=True)
-    tamaño_mb = os.path.getsize(destino) / (1024 * 1024)
-    print(f"✅ Backup creado: {destino} ({tamaño_mb:.1f} MB)")
+    if Restaurar_Backup:
+        backups = sorted(glob.glob(f"{BACKUP_DIR}/ZomboidSaves_*.tar.gz"), key=os.path.getmtime, reverse=True)
+        if not backups:
+            print("📭 No hay backups disponibles para restaurar.")
+        else:
+            print("📋 Backups disponibles (más reciente primero):")
+            for i, b in enumerate(backups):
+                sz = os.path.getsize(b) / (1024 * 1024)
+                print(f"  [{i}] {os.path.basename(b)} ({sz:.1f} MB)")
+            idx = max(0, min(numero_backup, len(backups) - 1))
+            eleccion = backups[idx]
+            ts = time.strftime("%Y%m%d_%H%M%S")
+            respaldo_previo = f"{BACKUP_DIR}/previo_a_restore_{ts}.tar.gz"
+            print(f"⚠️  RESTAURACIÓN: {os.path.basename(eleccion)} reemplazará tu save actual.")
+            print(f"   Se guarda un backup de seguridad en: {os.path.basename(respaldo_previo)}")
+            with tarfile.open(respaldo_previo, "w:gz") as tar:
+                tar.add(SAVES_PATH, arcname="ZomboidSaves", recursive=True, filter=_tar_filter)
+            with tarfile.open(eleccion, "r:gz") as tar:
+                tar.extractall(path=os.path.dirname(SAVES_PATH), filter="data")
+            print(f"✅ Restore completado: {os.path.basename(eleccion)} → {SAVES_PATH}")
+            print("   Reinicia el servidor (Celda 2) para aplicar.")
+    else:
+        if not os.path.isdir(SAVES_PATH):
+            os.makedirs(SAVES_PATH, exist_ok=True)
+        _rotar_logs()
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        destino = f"{BACKUP_DIR}/ZomboidSaves_{ts}_{int(time.time() * 1000) % 100000:05d}.tar.gz"
+        print("📦 Creando backup (según el tamaño del mundo puede tardar unos minutos)...")
+        with tarfile.open(destino, "w:gz") as tar:
+            tar.add(SAVES_PATH, arcname="ZomboidSaves", recursive=True, filter=_tar_filter)
+        tamaño_mb = os.path.getsize(destino) / (1024 * 1024)
+        print(f"✅ Backup creado: {destino} ({tamaño_mb:.1f} MB)")
 
-    backups = sorted(glob.glob(f"{BACKUP_DIR}/ZomboidSaves_*.tar.gz"))
-    max_guardar = max(1, Backup_Max_Guardar)
-    for viejo in backups[:-max_guardar]:
-        os.remove(viejo)
-    print(f"📊 Backups conservados: {len(backups)} (máximo {max_guardar})")
-    print(f"📂 Carpeta de backups: {BACKUP_DIR}")
+        backups = sorted(glob.glob(f"{BACKUP_DIR}/ZomboidSaves_*.tar.gz"), key=os.path.getmtime)
+        max_guardar = max(1, Backup_Max_Guardar)
+        for viejo in backups[:-max_guardar]:
+            os.remove(viejo)
+        print(f"📊 Backups conservados: {len(backups)} (máximo {max_guardar})")
+        print(f"📂 Carpeta de backups: {BACKUP_DIR}")
 ''')
 
 cells = [
