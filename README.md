@@ -34,6 +34,9 @@ Run your own **free Project Zomboid dedicated server** in the cloud using **Goog
 * **Configurable memory:** choose 4 / 6 / 8 GB of server RAM in Cell 2 — the notebook re-patches `-Xms/-Xmx` on every start and **auto-caps** the value to a safe limit based on the runtime's real RAM (never more than 8 GB on Colab).
 * **Playit tunnel + live console + clean shutdown (unified):** Cell 2 starts the server with a watchdog, claims or reuses your persistent Playit.gg tunnel, streams the live console below, and **auto-saves + shuts down cleanly** when you stop the cell — no separate shutdown cell needed.
 * **Easy Workshop mods + collections:** paste a Workshop URL or numeric ID (one per line) — or a whole Steam **collection** — and the notebook downloads each item via SteamCMD, **auto-detects the real Mod ID** from its `mod.info`, classifies them (Libraries / UI / Vehicles / QoL) and writes them to the server `.ini` without duplicates.
+* **Auto-download mod dependencies:** when a mod declares a missing `require=` (in its `mod.info`), Cell 4 searches the Steam Workshop, resolves the dependency's Workshop ID and downloads it automatically (cache per session, up to 3 passes for transitive deps). Deps not found on the Workshop are reported so you can paste them manually.
+* **Quick mod removal (Cell 4):** list your active mods and remove one by number or Workshop ID directly — no need to edit the `.ini` by hand. Great for quickly disabling a mod that the diagnostics flagged as unstable.
+* **Auto-saves backup:** when you stop Cell 2 (⏹), the notebook automatically creates a `.tar.gz` of your world in `MyDrive/ZomboidSaves_backups` **before** shutting down, rotates the log folder to keep it small, and respects the retention count.
 * **Crash watchdog:** the server auto-restarts on failure (configurable retry count).
 * **Saves backup:** one-click `.tar.gz` backups on Drive with configurable retention.
 * **Advanced log diagnostics:** scans log files and groups errors per mod — Lua crashes, Steam Workshop failures, **out-of-memory problems, server/port errors and save failures** — naming the actual culprit and suggesting fixes.
@@ -73,12 +76,18 @@ If automatic detection fails for a mod, use the advanced format `URL|ModIDManual
 
 The notebook also flags **possible build incompatibilities** (b41 vs b42) by scanning each mod's Workshop page, and warns about **missing required dependencies** (`require=` in `mod.info`) before you restart the server — the report shows each mod's real name, type and required dependencies.
 
+> **Bonus:** if a mod declares a missing `require=` that the notebook finds on the Workshop, Cell 4 downloads the dependency **automatically** (cache per session, up to 3 passes for transitive deps). Dependencies not found on the Workshop are listed in a "MISSING DEPENDENCIES" report so you can paste them manually. To turn off this behavior, clear the `Descargar_Dependencias` flag.
+
+#### Quick mod removal
+
+To quickly disable a mod you no longer want (for example, one flagged as unstable by Cell 3.1), use the **quick removal** helper at the top of Cell 4: tick `Eliminar_Mods`/`Disable a mod`, read the numbered list of active mods, and enter its **number or Workshop ID** in `numero_a_eliminar`/`number_to_remove`. The cell rewrites `WorkshopItems`/`Mods` in the `.ini` in place — no manual editing needed.
+
 ## 🛠️ Server Operations
 
-* **Cell 2 — Server + Console + Auto-shutdown (unified):** runs the server with the crash watchdog, streams the live console below, and **auto-saves + shuts down cleanly** when you press ⏹ (or when the cell is interrupted).
+* **Cell 2 — Server + Console + Auto-shutdown (unified):** runs the server with the crash watchdog, streams the live console below, and **auto-saves + shuts down cleanly** when you press ⏹ (or when the cell is interrupted). An automatic `.tar.gz` backup of your world is created first.
 * **Cell 3 — Easy Mods:** paste a Workshop URL or collection (see below).
 * **Cell 3.1 — Log Diagnostics:** scans logs and groups errors per mod.
-* **Cell 4 — Backup:** creates a `.tar.gz` of your saves in `MyDrive/ZomboidSaves_backups` with retention of the last N copies.
+* **Cell 4 — Backup:** creates a `.tar.gz` of your saves in `MyDrive/ZomboidSaves_backups` with retention of the last 3 copies, rotates the `Logs/` folder to keep saves small, and offers a **restore** mode (list backups, safety-backup your current save, then extract the chosen one).
 * **Anti-idle (end of notebook):** paste the browser script into the Colab page console (F12) to keep the session alive.
 
 ## 🧠 Log Diagnostics
@@ -102,6 +111,10 @@ If the server fails to boot or mods misbehave, run **Cell 3.1 — Server Inspect
 **Will my world be lost when Colab disconnects?** No. The world and configs are stored on your Google Drive and reloaded on the next session.
 
 **Can I play with friends on b41 and b42?** Yes — pick the version in Cell 1; the notebook installs the matching dedicated server branch (legacy 41 or stable 42).
+
+**Are my saves backed up?** Yes. Every time you stop Cell 2, the notebook auto-saves the world and creates an encrypted-ready `.tar.gz` of `ZomboidSaves/` in `MyDrive/ZomboidSaves_backups/`, keeping only the 3 most recent copies. The `Logs/` folder is rotated (20 newest files) before zipping, so the backup stays small — well within a 1 GB Google Drive allowance. You can also create, list and **restore** a backup manually in Cell 5 — a safety backup of your current save is made first.
+
+**How do I remove a mod?** Use the **quick removal** helper at the top of Cell 4 (`Eliminar_Mods` / `number_to_remove`): enter the mod's number or Workshop ID and the cell rewrites the `.ini` in place. To see which mods are unstable, check Cell 3.1 (Log Diagnostics) — it lists the culprit mod for each crash.
 
 ## ⚠️ Important Notes
 

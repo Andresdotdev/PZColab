@@ -19,8 +19,10 @@ Este proyecto está pensado como una herramienta open-source para facilitar el t
 * **Memoria configurable:** elige 4 / 6 / 8 GB de RAM del servidor en la Celda 2 — el cuaderno re-aplica el parche `-Xms/-Xmx` en cada arranque y **limita automáticamente** el valor según la RAM real del runtime (nunca más de 8 GB en Colab).
 * **Túnel Playit + Consola en Vivo + Apagado Automático (unificado):** la Celda 2 enciende el servidor con watchdog, reclama o reutiliza tu túnel Playit.gg persistente, muestra la consola en vivo debajo y almacena el mundo guardándolo (`save` + `quit`) de forma ordenada al detener la celda con ⏹.
 * **Inyector de Mods Fácil + Colecciones:** Pega la URL del Workshop (o solo el ID) de cada mod — uno por línea — o una colección entera de Steam y el sistema la expande. Descarga cada item vía SteamCMD, **detecta automáticamente el Mod ID real** leyendo el `mod.info`, los clasifica (Librerías, UI, Vehículos, QoL) y los escribe en el `.ini` sin duplicados.
+* **Descarga automática de dependencias:** cuando un mod declara un `require=` faltante (en su `mod.info`), la Celda 4 busca el ID de Workshop de la dependencia y la descarga **automáticamente** (cache por sesión, hasta 3 pasadas para deps transitivas). Las dependencias no encontradas en el Workshop se reportan para pegarlas manualmente.
+* **Borrado rápido de mods (Celda 4):** lista tus mods activos y elimina uno por número o ID de Workshop directamente — no hace falta editar el `.ini` a mano. Ideal para desactivar un mod que el diagnóstico (Celda 3.1) marcó como inestable.
 * **Watchdog de Crashes:** Auto-reinicio del servidor ante fallos (número de reintentos configurable).
-* **Backup de Saves:** Genera respaldos `.tar.gz` en Drive con retención configurable.
+* **Backup + Auto-respaldo:** al apagar (Celda 2, ⏹) y al usar la Celda 5, se crea un `.tar.gz` de los saves en `MyDrive/ZomboidSaves_backups` con retención de las 3 últimas copias y rotación de `Logs/` (máx. 20 archivos) para mantener el backup pequeño (≈ dentro del tope de 1 GB de Drive). Incluye **restauración interactiva** con backup de seguridad previo.
 * **🛠️ Diagnóstico Avanzado de Logs:** Un script analizador único que escanea los archivos de registro (`DebugLog-server.txt`) para detectar *crashes*, errores de Lua y fallos de Steam Workshop, señalando qué mod específico está causando inestabilidad en el servidor.
 * **Anti-AFK:** Script integrado para la consola del navegador que previene la desconexión por inactividad en Google Colab.
 
@@ -56,14 +58,21 @@ Si algún mod falla la detección automática, usa el formato avanzado `URL|ModI
 
 La celda también avisa de **posibles incompatibilidades de build** (b41 vs b42) escaneando la página del Workshop de cada mod, y de **dependencias requeridas faltantes** (`require=` en `mod.info`) antes de reiniciar el servidor — el reporte muestra el nombre real, el tipo y las dependencias de cada mod.
 
-> 💡 Si la contraseña de admin se deja vacía en la Celda 2, se recupera del `.ini` existente o se genera una automáticamente (se muestra en consola).
+> **Bonus:** si un mod declara un `require=` faltante que encuentra en el Workshop, la Celda 4 lo descarga **automáticamente** (cache por sesión, hasta 3 pasadas para deps transitivas). Las dependencias no encontradas se listan en un reporte "DEPENDENCIAS FALTANTES" para pegarlas a mano. Desactívalo desmarcando `Descargar_Dependencias`.
+
+#### Borrado rápido de mods
+
+Para desactivar un mod que ya no quieres (por ejemplo, el que el diagnóstico marcó como inestable), usa la sección de **gestión rápida** en la parte superior de la Celda 4: marca `Eliminar_Mods`, lee la lista numerada de mods activos y escribe su **número o ID de Workshop** en `numero_a_eliminar`. La celda reescribe `WorkshopItems`/`Mods` en el `.ini` in situ — no necesitas editarlo a mano.
+
+
 
 ### Operación del servidor
 
-* **Celda 2 — Servidor + Consola + Auto-Apagado (unificado):** enciende el servidor con watchdog, reclama o reutiliza el túnel Playit.gg, muestra la consola en vivo debajo y **guarda el mundo y apaga de forma ordenada** al detener la celda con ⏹.
+* **Celda 1 — Instalación:** instala SteamCMD, dependencias del sistema y el servidor, monta Drive y enlaza `/root/Zomboid` → `MyDrive/ZomboidSaves`.
+* **Celda 2 — Servidor + Consola + Auto-Apagado (unificado):** enciende el servidor con watchdog, reclama o reutiliza el túnel Playit.gg, muestra la consola en vivo debajo y **guarda el mundo y apaga de forma ordenada** (con respaldo automático) al detener la celda con ⏹.
 * **Celda 3 — Mods Fáciles:** pega URLs o colecciones del Workshop (ver arriba).
 * **Celda 3.1 — Diagnóstico de errores:** escanea logs y agrupa errores por mod.
-* **Celda 4 — Backup:** crea un `.tar.gz` de tus saves en `MyDrive/ZomboidSaves_backups` con retención de las N últimas copias.
+* **Celda 4 — Backup + Restauración:** crea un `.tar.gz` de tus saves en `MyDrive/ZomboidSaves_backups` con retención de 3 copias, rota `Logs/` y ofrece restaurar un backup (guarda de seguridad previo).
 * **Anti-AFK (al final del cuaderno):** script para la consola del navegador que evita la desconexión por inactividad mientras el servidor corre.
 
 ## 🧠 Diagnóstico de Errores

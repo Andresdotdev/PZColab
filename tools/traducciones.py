@@ -594,6 +594,12 @@ TRADUCCIONES = [
         'f"✅ Restore completed: {os.path.basename(eleccion)} → {SAVES_PATH}"',
     ),
     ('"   Reinicia el servidor (Celda 2) para aplicar."', '"   Restart the server (Cell 2) to apply."'),
+    ('# @markdown ### 💾 Backup automático al apagar', '# @markdown ### 💾 Auto-backup on shutdown'),
+    ('# --- Auto-backup al apagar (antes del save final) ---', '# --- Auto-backup on shutdown (before final save) ---'),
+    (
+        'print(f"💾 Auto-backup creado: {destino}")',
+        'print(f"💾 Auto-backup created: {destino}")',
+    ),
 ]
 
 # Aplicar las más largas primero para evitar colisiones parciales
