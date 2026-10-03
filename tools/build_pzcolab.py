@@ -358,6 +358,33 @@ else:
     set_ini("AdminPassword", admin_password)
     print(f"⚙️ Configuración aplicada en {INI_PATH}")
 
+# --- 1.1 NOMBRE PÚBLICO + AVISO DE ZOMBIEBUDDY PARA JUGADORES ---
+set_ini("PublicName", server_name)
+
+ZB_GUIDE = "andresdotdev.github.io/PZColab/#zombiebuddy"
+zb_en_mods = False
+if os.path.exists(INI_PATH):
+    with open(INI_PATH) as f:
+        m_mods = re.search(r'^Mods=(.*)$', f.read(), re.MULTILINE)
+    if m_mods:
+        zb_en_mods = any(x.strip().lstrip("\\\\").lower() == "zombiebuddy" for x in m_mods.group(1).split(";"))
+
+if zb_en_mods:
+    set_ini("PublicDescription", f"Mods Java (ZombieBuddy): instala el agente una vez antes de entrar -> {ZB_GUIDE}")
+    set_ini("ServerWelcomeMessage", f"Bienvenido! Este servidor usa mods ZombieBuddy. Instálalo antes de entrar (1 min): {ZB_GUIDE}")
+    print("🧩 ZombieBuddy en los mods: link de instalación añadido a la descripción y bienvenida del servidor.")
+else:
+    aviso_retirado = False
+    for clave in ("PublicDescription", "ServerWelcomeMessage"):
+        if os.path.exists(INI_PATH):
+            with open(INI_PATH) as f:
+                m_aviso = re.search(rf'^{clave}=(.*)$', f.read(), re.MULTILINE)
+            if m_aviso and ZB_GUIDE in m_aviso.group(1):
+                set_ini(clave, f"Bienvenido a {server_name}!" if clave == "ServerWelcomeMessage" else "")
+                aviso_retirado = True
+    if aviso_retirado:
+        print("🧩 ZombieBuddy ya no está en los mods: aviso retirado del servidor.")
+
 if port != 16261:
     print(f"⚠️ Puerto cambiado a {port}. Actualiza el túnel en https://playit.gg/account")
 
@@ -613,6 +640,10 @@ Descargar_Mods = True # @param {type:"boolean"}
 Descargar_Dependencias = True # @param {type:"boolean"}
 # @markdown _💡 Si un mod requiere otro (require= en `mod.info`) y falta de descargar, lo busca en Workshop y lo descarga automáticamente (3 pasos, cache por sesión). Los que no encuentre, se reportan para pegarlos manualmente._
 # @markdown
+# @markdown ### 🧩 ZombieBuddy (mods Java)
+Incluir_ZombieBuddy = False # @param {type:"boolean"}
+# @markdown _💡 Si algún mod usa Java (requiere ZombieBuddy), actívalo para incluirlo automáticamente y avisar a tus jugadores cómo instalar el agente._
+# @markdown
 # @markdown ### 🗑️ Gestión rápida de mods
 Eliminar_Mods = False # @param {type:"boolean"}
 # @markdown _💡 Activa para listar tus mods y eliminar uno por número o WSID sin tocar el .ini a mano._
@@ -628,6 +659,17 @@ SERVER_PATH = '/content/pzserver'
 STATE_PATH = f"{SAVES_PATH}/.pzcolab_state.json"
 WS_APP = "108600"
 WS_BASE = f"{SERVER_PATH}/steamapps/workshop/content/{WS_APP}"
+
+# ZombieBuddy (framework Java): Workshop ID fijo y links de instalación para jugadores
+ZB_WSID = "3619862853"
+ZB_INSTALLER = "https://github.com/zed-0xff/ZombieBuddy/releases/download/windows_installer_4.2/ZombieBuddyInstaller_v4.2.exe"
+ZB_RELEASES = "https://github.com/zed-0xff/ZombieBuddy/releases"
+ZB_GUIDE = "https://andresdotdev.github.io/PZColab/#zombiebuddy"
+zb_activo = False
+
+def norm_modid(mid):
+    """Normaliza un Mod ID: quita espacios y el backslash de b42 (\\\\ModID)."""
+    return (mid or "").strip().lstrip("\\\\")
 
 try:
     with open(STATE_PATH) as f:
@@ -730,6 +772,7 @@ else:
     deps_cache = {}  # cache por sesión: ModID -> WSID
 
     def buscar_wsid_por_modid(query):
+        query = norm_modid(query)
         if query in deps_cache:
             return deps_cache[query]
         wsid = None
@@ -845,7 +888,7 @@ else:
 
     def clasificar(nombre, mid):
         n = f"{nombre} {mid}".lower()
-        if any(k in n for k in ("lib", "tsar", "core", "framework")): return "lib"
+        if any(k in n for k in ("lib", "tsar", "core", "framework", "zombiebuddy")): return "lib"
         if "ui" in n: return "ui"
         if any(k in n for k in ("car", "vehicle", "bike")): return "car"
         return "qol"
@@ -863,6 +906,11 @@ else:
             nuevos.append((wsid, manual, clasificar(manual, manual), manual))
         else:
             print(f"⚠️ No se detectó el Mod ID de {wsid}. Si lo conoces, usa el formato: URL|ModID")
+
+    # ZombieBuddy: ¿está en la lista o lo requiere algún mod? (el aviso final usa zb_activo)
+    zb_activo = any(norm_modid(m[1]).lower() == "zombiebuddy" for m in nuevos) or (
+        Incluir_ZombieBuddy and any(norm_modid(r).lower() == "zombiebuddy"
+                                    for reqs in requerimientos.values() for r in reqs))
 
     # --- 5. MERGE CON HISTORIAL DEL .ini (sin duplicados) ---
     if not os.path.exists(INI_PATH):
@@ -943,20 +991,30 @@ else:
                     wsids_existentes.add(wsid_dir)
                     for mid, mname, requires in detectar(wsid_dir):
                         ids_en_filesystem.add(mid)
-            ids_configurados = {m[1] for m in combinada} | ids_en_filesystem
+            ids_configurados = {norm_modid(m[1]).lower() for m in combinada} | {norm_modid(x).lower() for x in ids_en_filesystem}
             for mid, reqs in requerimientos.items():
                 for req in reqs:
-                    if req not in ids_configurados:
+                    if norm_modid(req).lower() not in ids_configurados:
                         faltantes.append((mid, req))
             if faltantes:
-                if Descargar_Dependencias and os.path.isdir(WS_BASE):
+                # ZombieBuddy con la casilla desactivada: no se agrega, solo se avisa
+                zb_bloqueado = [(m, r) for m, r in faltantes if norm_modid(r).lower() == "zombiebuddy" and not Incluir_ZombieBuddy]
+                if zb_bloqueado:
+                    print("\\n🧩 ZOMBIEBUDDY REQUERIDO (casilla Incluir_ZombieBuddy desactivada):")
+                    print("   Un mod pide el framework Java ZombieBuddy. Activa la casilla y vuelve a ejecutar esta celda para incluirlo.")
+                    faltantes = [(m, r) for m, r in faltantes if not (norm_modid(r).lower() == "zombiebuddy" and not Incluir_ZombieBuddy)]
+                if Descargar_Dependencias and os.path.isdir(WS_BASE) and faltantes:
                     print("\\n🔎 Resolviendo dependencias faltantes vía Workshop (máx. 3 pasos)...")
                     pasada = 0
                     while faltantes and pasada < 3:
                         pasada += 1
                         nuevos_wsids = []
                         for mid, req in faltantes:
-                            wsid = buscar_wsid_por_modid(req)
+                            if norm_modid(req).lower() == "zombiebuddy":
+                                wsid = ZB_WSID
+                                print(f"   🔗 ZombieBuddy -> Workshop {ZB_WSID} (framework Java, WSID fijo)")
+                            else:
+                                wsid = buscar_wsid_por_modid(req)
                             if wsid:
                                 # Si ya está descargado en el filesystem, no volver a descargar, solo enlazarlo
                                 if wsid in wsids_existentes:
@@ -1009,11 +1067,11 @@ else:
                         for wsid in nuevos_wsids:
                             for mid, mname, requires in detectar(wsid):
                                 ids_en_filesystem.add(mid)
-                        ids_configurados = {m[1] for m in combinada} | ids_en_filesystem
+                        ids_configurados = {norm_modid(m[1]).lower() for m in combinada} | {norm_modid(x).lower() for x in ids_en_filesystem}
                         faltantes = []
                         for mid, reqs in requerimientos.items():
                             for req in reqs:
-                                if req not in ids_configurados:
+                                if norm_modid(req).lower() not in ids_configurados:
                                     faltantes.append((mid, req))
                 if faltantes:
                     print("\\n⚠️ DEPENDENCIAS FALTANTES:")
@@ -1109,6 +1167,16 @@ if Eliminar_Mods and os.path.exists(INI_PATH):
             print(f"✅ {borrado} eliminado del .ini. Reinicia el servidor (Celda 2).")
         else:
             print("⚠️ Número o WSID inválido. Revisa la lista y vuelve a intentarlo.")
+
+# --- 8. ZOMBIEBUDDY: AVISO CON LINKS PARA JUGADORES ---
+if zb_activo:
+    print("\\n" + "=" * 60)
+    print("🧩 ZOMBIEBUDDY ACTIVO: tus jugadores deben instalar el agente una vez")
+    print("   Windows (instalador): " + ZB_INSTALLER)
+    print("   macOS/Linux (jar + -javaagent): " + ZB_RELEASES)
+    print("   Guía paso a paso (ES/EN): " + ZB_GUIDE)
+    print("   La Celda 2 añade el link a la descripción y bienvenida del servidor.")
+    print("=" * 60)
 ''')
 
 

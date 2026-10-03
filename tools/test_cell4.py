@@ -66,6 +66,18 @@ os.makedirs(item_g)
 with open(os.path.join(item_g, "mod.info"), "w", encoding="utf-8") as f:
     f.write("id=gmod\nname=G Mod\nrequire=otromod\n")
 
+# item 556680: mod (b42) que requiere ZombieBuddy con backslash
+item_h = os.path.join(WS, "556680", "mods", "zbmod")
+os.makedirs(item_h)
+with open(os.path.join(item_h, "mod.info"), "w", encoding="utf-8") as f:
+    f.write("id=zbmod\nname=ZB Mod\nrequire=\\ZombieBuddy\n")
+
+# item 556681: mod (b42) con require genérico con backslash (\otromod)
+item_h3 = os.path.join(WS, "556681", "mods", "zbmod2")
+os.makedirs(item_h3)
+with open(os.path.join(item_h3, "mod.info"), "w", encoding="utf-8") as f:
+    f.write("id=zbmod2\nname=ZB Mod 2\nrequire=\\otromod\n")
+
 # NOTA: item 556679 (otromod) NO se crea aquí; el fake_subprocess_run lo crea
 # al simular la descarga via steamcmd, para testear la auto-descarga de deps.
 
@@ -111,6 +123,12 @@ def fake_subprocess_run(cmd, **kwargs):
         os.makedirs(sub, exist_ok=True)
         with open(os.path.join(sub, "mod.info"), "w", encoding="utf-8") as f:
             f.write("id=otromod\nname=Otro Mod\n")
+    # Simular contenido del item de ZombieBuddy (framework Java, WSID fijo)
+    if wsid == "3619862853":
+        sub = os.path.join(carpeta, "mods", "zombiebuddy")
+        os.makedirs(sub, exist_ok=True)
+        with open(os.path.join(sub, "mod.info"), "w", encoding="utf-8") as f:
+            f.write("id=ZombieBuddy\nname=ZombieBuddy\n")
     return types.SimpleNamespace(returncode=0)
 
 fake_subprocess = types.ModuleType("subprocess")
@@ -120,23 +138,25 @@ sys.modules["subprocess"] = fake_subprocess
 
 # --- Preparar el código de la celda para inyectar parámetros de test ---
 code = src.replace('mods_input = ""', "mods_input = _INPUT")
-vars_params = (["Limpiar_Lista_Anterior", "Descargar_Mods", "Descargar_Dependencias"] if ES else ["clear_previous_list", "download_mods", "resolve_dependencies"])
+vars_params = (["Limpiar_Lista_Anterior", "Descargar_Mods", "Descargar_Dependencias", "Incluir_ZombieBuddy"] if ES else ["clear_previous_list", "download_mods", "resolve_dependencies", "include_zombie_buddy"])
 for var in vars_params:
-    code = code.replace(var, "_LIMP" if "clear" in var or "Limpiar" in var else "_DESC" if "download" in var or "Descargar_Mods" in var else "_DEP")
+    code = code.replace(var, "_LIMP" if "clear" in var or "Limpiar" in var else "_DESC" if "download" in var or "Descargar_Mods" in var else "_ZB" if "zombie" in var.lower() else "_DEP")
 code = code.replace("_LIMP = False", "_LIMP = _LIMP")
 code = code.replace("_DESC = True", "_DESC = _DESC")
 code = code.replace("_DEP = True", "_DEP = _DEP")
+code = code.replace("_ZB = False", "_ZB = _ZB")
 code = code.replace("'/content/drive/MyDrive/ZomboidSaves'", "r'" + saves.replace("\\", "/") + "'")
 code = code.replace("'/content/pzserver'", "r'" + server.replace("\\", "/") + "'")
 
 ns = {}
 
-def correr(input_, limpiar=False, descargar=True, deps=True):
+def correr(input_, limpiar=False, descargar=True, deps=True, zb=False):
     ns.clear()
     ns["_INPUT"] = input_
     ns["_LIMP"] = limpiar
     ns["_DESC"] = descargar
     ns["_DEP"] = deps
+    ns["_ZB"] = zb
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         exec(compile(code, "cell-mods", "exec"), ns)
@@ -247,5 +267,40 @@ out = correr("556678", deps=False)
 assert aviso_deps in out, f"sin aviso de faltantes (modo deps=False):\n{out}"
 assert "otromod" in out, f"no menciona la dependencia faltante:\n{out}"
 print("G2 OK: con deps=False, dependencia faltante reportada (fallback manual)")
+
+# ============ ESCENARIO H: ZombieBuddy (framework Java) ============
+zb_req_msg = "ZOMBIEBUDDY REQUERIDO" if ES else "ZOMBIEBUDDY REQUIRED"
+zb_on_msg = "ZOMBIEBUDDY ACTIVO" if ES else "ZOMBIEBUDDY ACTIVE"
+ZB_WSID = "3619862853"
+dep_zb = os.path.join(WS, ZB_WSID)
+
+# H1: check ON -> WSID fijo (sin búsqueda web), descargado, en el .ini y aviso con links
+with open(INI, "w") as f:
+    f.write("Port=16261\nWorkshopItems=556680;1111\nMods=\\zbmod;\\oldmod\nPauseOnEmpty=true\n")
+if os.path.isdir(dep_zb):
+    shutil.rmtree(dep_zb)
+out = correr("556680", deps=True, zb=True)
+assert "ZombieBuddy -> Workshop " + ZB_WSID in out, f"no usó el WSID fijo de ZombieBuddy:\n{out}"
+ini = open(INI).read()
+assert ZB_WSID in ini, f"ZombieBuddy no fue agregado al ini:\n{ini}"
+assert "ZombieBuddy" in ini.replace("\\", ""), f"Mod ID ZombieBuddy ausente:\n{ini}"
+assert zb_on_msg in out, f"sin aviso ZOMBIEBUDDY ACTIVO:\n{out}"
+assert "windows_installer" in out and "#zombiebuddy" in out, f"faltan links de instalación:\n{out}"
+print("H1 OK: check ON -> require=\\ZombieBuddy resuelto con WSID fijo + Mods/.ini + links")
+
+# H2: check OFF -> no se agrega nada y se avisa cómo activarlo
+with open(INI, "w") as f:
+    f.write("Port=16261\nWorkshopItems=556680;1111\nMods=\\zbmod;\\oldmod\nPauseOnEmpty=true\n")
+if os.path.isdir(dep_zb):
+    shutil.rmtree(dep_zb)
+out = correr("556680", deps=True, zb=False)
+assert zb_req_msg in out, f"sin aviso de ZombieBuddy requerido:\n{out}"
+assert ZB_WSID not in open(INI).read(), f"no debía agregarse ZombieBuddy con el check OFF:\n{open(INI).read()}"
+print("H2 OK: check OFF -> no se agrega y se indica activar la casilla")
+
+# H3: require genérico con backslash b42 (\otromod) también se resuelve
+out = correr("556681", deps=True, zb=False)
+assert "otromod -> Workshop 556679" in out, f"no se resolvió require con backslash:\n{out}"
+print("H3 OK: require=\\otromod (backslash b42) resuelto vía Workshop")
 
 print("\n✅ TODOS LOS ESCENARIOS PASARON")

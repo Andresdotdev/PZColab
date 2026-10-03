@@ -600,6 +600,58 @@ TRADUCCIONES = [
         'print(f"💾 Auto-backup creado: {destino}")',
         'print(f"💾 Auto-backup created: {destino}")',
     ),
+    # --- ZombieBuddy (opt-in en Celda Mods + aviso en Celda 2) ---
+    ("# @markdown ### 🧩 ZombieBuddy (mods Java)", "# @markdown ### 🧩 ZombieBuddy (Java mods)"),
+    (
+        "# @markdown _💡 Si algún mod usa Java (requiere ZombieBuddy), actívalo para incluirlo automáticamente y avisar a tus jugadores cómo instalar el agente._",
+        "# @markdown _💡 If any mod uses Java (requires ZombieBuddy), enable this to include it automatically and tell your players how to install the agent._",
+    ),
+    ("Incluir_ZombieBuddy", "include_zombie_buddy"),
+    (
+        '"\\n🧩 ZOMBIEBUDDY REQUERIDO (casilla Incluir_ZombieBuddy desactivada):"',
+        '"\\n🧩 ZOMBIEBUDDY REQUIRED (include_zombie_buddy checkbox is off):"',
+    ),
+    (
+        '"   Un mod pide el framework Java ZombieBuddy. Activa la casilla y vuelve a ejecutar esta celda para incluirlo."',
+        '"   A mod needs the ZombieBuddy Java framework. Enable the checkbox and run this cell again to include it."',
+    ),
+    (
+        'f"   🔗 ZombieBuddy -> Workshop {ZB_WSID} (framework Java, WSID fijo)"',
+        'f"   🔗 ZombieBuddy -> Workshop {ZB_WSID} (Java framework, fixed WSID)"',
+    ),
+    (
+        '"🧩 ZOMBIEBUDDY ACTIVO: tus jugadores deben instalar el agente una vez"',
+        '"🧩 ZOMBIEBUDDY ACTIVE: your players must install the agent once"',
+    ),
+    ('"   Windows (instalador): "', '"   Windows (installer): "'),
+    (
+        '"   Guía paso a paso (ES/EN): "',
+        '"   Step-by-step guide (ES/EN): "',
+    ),
+    (
+        '"   La Celda 2 añade el link a la descripción y bienvenida del servidor."',
+        '"   Cell 2 adds the link to the server description and welcome message."',
+    ),
+    (
+        'f"Mods Java (ZombieBuddy): instala el agente una vez antes de entrar -> {ZB_GUIDE}"',
+        'f"Java mods (ZombieBuddy): install the agent once before joining -> {ZB_GUIDE}"',
+    ),
+    (
+        'f"Bienvenido! Este servidor usa mods ZombieBuddy. Instálalo antes de entrar (1 min): {ZB_GUIDE}"',
+        'f"Welcome! This server uses ZombieBuddy mods. Install it before joining (1 min): {ZB_GUIDE}"',
+    ),
+    (
+        '"🧩 ZombieBuddy en los mods: link de instalación añadido a la descripción y bienvenida del servidor."',
+        '"🧩 ZombieBuddy in mods: install link added to the server description and welcome message."',
+    ),
+    (
+        'f"Bienvenido a {server_name}!"',
+        'f"Welcome to {server_name}!"',
+    ),
+    (
+        '"🧩 ZombieBuddy ya no está en los mods: aviso retirado del servidor."',
+        '"🧩 ZombieBuddy is no longer in the mods: notice removed from the server."',
+    ),
 ]
 
 # Aplicar las más largas primero para evitar colisiones parciales

@@ -18,6 +18,7 @@ Run your own **free Project Zomboid dedicated server** in the cloud using **Goog
 - [🚀 Quick Start](#-quick-start)
 - [🎮 Supported Game Versions](#-supported-game-versions)
 - [📦 Installing Mods (Easy Mode)](#-installing-mods-easy-mode)
+- [🧩 ZombieBuddy (Java Mods)](#-zombiebuddy-java-mods)
 - [🛠️ Server Operations](#️-server-operations)
 - [🧠 Log Diagnostics](#-log-diagnostics)
 - [❓ FAQ](#-faq)
@@ -35,6 +36,7 @@ Run your own **free Project Zomboid dedicated server** in the cloud using **Goog
 * **Playit tunnel + live console + clean shutdown (unified):** Cell 2 starts the server with a watchdog, claims or reuses your persistent Playit.gg tunnel, streams the live console below, and **auto-saves + shuts down cleanly** when you stop the cell — no separate shutdown cell needed.
 * **Easy Workshop mods + collections:** paste a Workshop URL or numeric ID (one per line) — or a whole Steam **collection** — and the notebook downloads each item via SteamCMD, **auto-detects the real Mod ID** from its `mod.info`, classifies them (Libraries / UI / Vehicles / QoL) and writes them to the server `.ini` without duplicates.
 * **Auto-download mod dependencies:** when a mod declares a missing `require=` (in its `mod.info`), Cell 4 searches the Steam Workshop, resolves the dependency's Workshop ID and downloads it automatically (cache per session, up to 3 passes for transitive deps). Deps not found on the Workshop are reported so you can paste them manually.
+* **Optional ZombieBuddy support (Java mods):** one checkbox makes Cell 4 resolve the [ZombieBuddy](https://github.com/zed-0xff/ZombieBuddy) framework automatically (fixed Workshop ID, b42 `require=\` format included), print install links for your players, and — via Cell 2 — put a short install note with a link into the server description and welcome message.
 * **Quick mod removal (Cell 4):** list your active mods and remove one by number or Workshop ID directly — no need to edit the `.ini` by hand. Great for quickly disabling a mod that the diagnostics flagged as unstable.
 * **Auto-saves backup:** when you stop Cell 2 (⏹), the notebook automatically creates a `.tar.gz` of your world in `MyDrive/ZomboidSaves_backups` **before** shutting down, rotates the log folder to keep it small, and respects the retention count.
 * **Crash watchdog:** the server auto-restarts on failure (configurable retry count).
@@ -81,6 +83,25 @@ The notebook also flags **possible build incompatibilities** (b41 vs b42) by sca
 #### Quick mod removal
 
 To quickly disable a mod you no longer want (for example, one flagged as unstable by Cell 3.1), use the **quick removal** helper at the top of Cell 4: tick `Eliminar_Mods`/`Disable a mod`, read the numbered list of active mods, and enter its **number or Workshop ID** in `numero_a_eliminar`/`number_to_remove`. The cell rewrites `WorkshopItems`/`Mods` in the `.ini` in place — no manual editing needed.
+
+<a id="zombiebuddy" name="zombiebuddy"></a>
+## 🧩 ZombieBuddy (Java Mods)
+
+Some Build 42 mods are written in Java and need **[ZombieBuddy](https://github.com/zed-0xff/ZombieBuddy)** — a small agent each **player installs once** (it is *not* a Steam Workshop mod).
+
+**Server owner (Cell 4):** tick `Incluir_ZombieBuddy`/`include_zombie_buddy` before running the mods cell. The notebook then:
+
+* automatically adds the fixed Workshop ID (`3619862853`) whenever a mod declares `require=\ZombieBuddy` (no Workshop search needed, and it also understands the b42 backslash format);
+* prints the install links so you can share them with your players;
+* **Cell 2** writes a short note with the install link into the server's `PublicDescription` and `ServerWelcomeMessage`, and removes it again if ZombieBuddy disappears from your mod list.
+
+**Players:** install the agent once, then join normally:
+
+* **Windows:** [ZombieBuddyInstaller_v4.2.exe](https://github.com/zed-0xff/ZombieBuddy/releases/download/windows_installer_4.2/ZombieBuddyInstaller_v4.2.exe) — download, run it, done.
+* **macOS / Linux:** grab the jar from the [releases page](https://github.com/zed-0xff/ZombieBuddy/releases) and start the game with `-javaagent:<path-to-jar>`.
+* Quick guide (ES/EN) with screenshots: <https://andresdotdev.github.io/PZColab/#zombiebuddy>
+
+With the checkbox **off** (the default), the notebook never installs ZombieBuddy — it only reports that a mod required it.
 
 ## 🛠️ Server Operations
 

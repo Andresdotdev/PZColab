@@ -20,6 +20,7 @@ Este proyecto está pensado como una herramienta open-source para facilitar el t
 * **Túnel Playit + Consola en Vivo + Apagado Automático (unificado):** la Celda 2 enciende el servidor con watchdog, reclama o reutiliza tu túnel Playit.gg persistente, muestra la consola en vivo debajo y almacena el mundo guardándolo (`save` + `quit`) de forma ordenada al detener la celda con ⏹.
 * **Inyector de Mods Fácil + Colecciones:** Pega la URL del Workshop (o solo el ID) de cada mod — uno por línea — o una colección entera de Steam y el sistema la expande. Descarga cada item vía SteamCMD, **detecta automáticamente el Mod ID real** leyendo el `mod.info`, los clasifica (Librerías, UI, Vehículos, QoL) y los escribe en el `.ini` sin duplicados.
 * **Descarga automática de dependencias:** cuando un mod declara un `require=` faltante (en su `mod.info`), la Celda 4 busca el ID de Workshop de la dependencia y la descarga **automáticamente** (cache por sesión, hasta 3 pasadas para deps transitivas). Las dependencias no encontradas en el Workshop se reportan para pegarlas manualmente.
+* **Soporte opcional de ZombieBuddy (mods Java):** una casilla hace que la Celda 4 resuelva el framework [ZombieBuddy](https://github.com/zed-0xff/ZombieBuddy) automáticamente (ID de Workshop fijo, incluye el formato `require=\` de b42), imprima los links de instalación para tus jugadores y — vía Celda 2 — deje una nota breve con el link en la descripción y bienvenida del servidor.
 * **Borrado rápido de mods (Celda 4):** lista tus mods activos y elimina uno por número o ID de Workshop directamente — no hace falta editar el `.ini` a mano. Ideal para desactivar un mod que el diagnóstico (Celda 3.1) marcó como inestable.
 * **Watchdog de Crashes:** Auto-reinicio del servidor ante fallos (número de reintentos configurable).
 * **Backup + Auto-respaldo:** al apagar (Celda 2, ⏹) y al usar la Celda 5, se crea un `.tar.gz` de los saves en `MyDrive/ZomboidSaves_backups` con retención de las 3 últimas copias y rotación de `Logs/` (máx. 20 archivos) para mantener el backup pequeño (≈ dentro del tope de 1 GB de Drive). Incluye **restauración interactiva** con backup de seguridad previo.
@@ -74,6 +75,25 @@ Para desactivar un mod que ya no quieres (por ejemplo, el que el diagnóstico ma
 * **Celda 3.1 — Diagnóstico de errores:** escanea logs y agrupa errores por mod.
 * **Celda 4 — Backup + Restauración:** crea un `.tar.gz` de tus saves en `MyDrive/ZomboidSaves_backups` con retención de 3 copias, rota `Logs/` y ofrece restaurar un backup (guarda de seguridad previo).
 * **Anti-AFK (al final del cuaderno):** script para la consola del navegador que evita la desconexión por inactividad mientras el servidor corre.
+
+<a id="zombiebuddy" name="zombiebuddy"></a>
+## 🧩 ZombieBuddy (mods Java)
+
+Algunos mods de Build 42 están escritos en Java y necesitan **[ZombieBuddy](https://github.com/zed-0xff/ZombieBuddy)** — un pequeño agente que **cada jugador instala una sola vez** (no es un mod de Steam Workshop).
+
+**Dueño del servidor (Celda 4):** marca `Incluir_ZombieBuddy`/`include_zombie_buddy` antes de ejecutar la celda de mods. El notebook entonces:
+
+* añade automáticamente el ID de Workshop fijo (`3619862853`) cuando un mod declara `require=\ZombieBuddy` (sin buscar en el Workshop, y también entiende el formato con backslash de b42);
+* imprime los links de instalación para que los compartas con tus jugadores;
+* la **Celda 2** escribe una nota corta con el link de instalación en el `PublicDescription` y el `ServerWelcomeMessage` del servidor, y la retira si ZombieBuddy desaparece de tu lista de mods.
+
+**Jugadores:** instala el agente una vez y entra con normalidad:
+
+* **Windows:** [ZombieBuddyInstaller_v4.2.exe](https://github.com/zed-0xff/ZombieBuddy/releases/download/windows_installer_4.2/ZombieBuddyInstaller_v4.2.exe) — descárgalo, ejecútalo y listo.
+* **macOS / Linux:** descarga el `.jar` desde la [página de releases](https://github.com/zed-0xff/ZombieBuddy/releases) y arranca el juego con `-javaagent:<ruta-del-jar>`.
+* Guía rápida (ES/EN) con capturas: <https://andresdotdev.github.io/PZColab/#zombiebuddy>
+
+Con la casilla **desactivada** (por defecto), el notebook nunca instala ZombieBuddy — solo reporta que algún mod lo requería.
 
 ## 🧠 Diagnóstico de Errores
 
